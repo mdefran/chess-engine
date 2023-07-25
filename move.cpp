@@ -6,8 +6,8 @@ Move::Move() {
     this->move = 0;
 }
 
-Move::Move(unsigned short fromSquare, unsigned short toSquare, unsigned short moveType) {
-    this->move = (moveType << 12) | (toSquare << 6) | (fromSquare);
+Move::Move(unsigned short fromSquare, unsigned short toSquare, MoveType moveType) {
+    this->move = (static_cast<unsigned short>(moveType) << 12) | (toSquare << 6) | (fromSquare);
 }
 
 Square Move::getFromSquare() { return static_cast<Square>(this->move & 0x3F); }
@@ -17,3 +17,4 @@ bool Move::isQuiet() { return !(static_cast<bool>(this->move >> 12)); } // Inver
 bool Move::isCapture() { return static_cast<bool>(this->move & (1 << 15) != 0); }
 bool Move::isPromotion() { return static_cast<bool>(this->move & (1 << 14) != 0); }
 void Move::printMove() { std::cout << this->getFromSquare() << " " << this->getToSquare() << std::endl; }
+bool Move::isNull() { return !(this->move); }

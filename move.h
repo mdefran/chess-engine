@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <list>
 #include "bitboard.h"
+#include "types.h"
 
 class Move {
 private:
@@ -17,9 +18,6 @@ private:
     uint16_t move;
 
 public:
-    Move();
-    Move(unsigned short fromSquare, unsigned short toSquare, unsigned short moveType);
-
     /*
     The 4 most significant bits represent the move type.
     Starting from the rightmost bit:
@@ -44,6 +42,9 @@ public:
         QueenPromotionCapture = 15 // 0b1111
     };
 
+    Move();
+    Move(unsigned short fromSquare, unsigned short toSquare, MoveType moveType);
+
     Square getFromSquare();
     Square getToSquare();
     MoveType getMoveType();
@@ -51,6 +52,7 @@ public:
     bool isCapture();
     bool isPromotion();
     void printMove();
+    bool isNull();
 };
 
 typedef std::list<Move> MoveList;
