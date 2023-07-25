@@ -148,6 +148,8 @@ struct Chessboard {
     Bitboard blackKing;
     Bitboard blackPieces;
 
+    Bitboard allPieces;
+
     Color turn;
     
     // Declare lookup tables for leaping pieces
@@ -177,6 +179,8 @@ struct Chessboard {
         blackQueen = 0x1000000000000000ULL;
         blackKing = 0x0800000000000000ULL;
         blackPieces = 0xFFFF000000000000ULL;
+
+        allPieces = whitePieces | blackPieces;
 
         turn = Black;
         
@@ -219,11 +223,19 @@ struct Chessboard {
 
     // Generate pseudo legal king moves for the current player using the attack maps
     void generateKingMoves() {
-        short fromSquare = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
-        Bitboard toSquares = kingAttacks[fromSquare];
+        short fromSquareIndex = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
+        Bitboard fromSquare = BITBOARD(fromSquareIndex);
+        Bitboard toSquares = kingAttacks[fromSquareIndex];
+
+        // Check for pseudo legal castling
+        if (turn == White) {
+            if (whiteKingCastle == true && (allPieces & (0x6ULL)) == 0) {
+                // Implement white king side castle
+            }
+        }
 
         while (toSquares != 0) {
-            addMove(fromSquare, POP_LSB(toSquares));
+            addMove(fromSquareIndex, POP_LSB(toSquares));
         }
     }
 
@@ -250,7 +262,7 @@ struct Chessboard {
             // Consider conditional moves
             if (turn == White) {
                 // Check for initial double advance conditions
-                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0)
+                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & allPieces) == 0)
                     toSquares |= fromSquare << 16;
                 // Check for diagonal pieces to capture
                 if ((northeast(fromSquare) & blackPieces) != 0)
@@ -259,7 +271,7 @@ struct Chessboard {
                     toSquares |= northwest(fromSquare);
             } else {
                 // Check for initial double advance conditions
-                if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0)
+                if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & allPieces) == 0)
                     toSquares |= fromSquare >> 16;
                 // Check for diagonal pieces to capture
                 if ((southeast(fromSquare) & whitePieces) != 0)
@@ -283,6 +295,45 @@ struct Chessboard {
         }
     }
 
+    void printChessboard() {
+        for (int rank = 7; rank >= 0; rank--) {
+            for (int file = 7; file >= 0; file--) {
+                int square = rank * 8 + file;
+                Bitboard mask = BITBOARD(square);
+                if (allPieces & mask) {
+                    // Find the piece on the square and print it
+                    if (whitePawns & mask)
+                        std::cout << "♙ ";
+                    else if (whiteKnights & mask)
+                        std::cout << "♘ ";
+                    else if (whiteBishops & mask)
+                        std::cout << "♗ ";
+                    else if (whiteRooks & mask)
+                        std::cout << "♖ ";
+                    else if (whiteQueen & mask)
+                        std::cout << "♕ ";
+                    else if (whiteKing & mask)
+                        std::cout << "♔ ";
+                    else if (blackPawns & mask)
+                        std::cout << "♟︎ ";
+                    else if (blackKnights & mask)
+                        std::cout << "♞ ";
+                    else if (blackBishops & mask)
+                        std::cout << "♝ ";
+                    else if (blackRooks & mask)
+                        std::cout << "♜ ";
+                    else if (blackQueen & mask)
+                        std::cout << "♛ ";
+                    else if (blackKing & mask)
+                        std::cout << "♚ ";
+                } else {
+                    std::cout << ". ";
+                }
+            }
+            std::cout << std::endl;
+        }
+    }
+
     void generateLegalMoves() {
 
     }
@@ -290,7 +341,6 @@ struct Chessboard {
 
 int main () {
     Chessboard chessboard;
-    chessboard.generatePawnMoves();
-    chessboard.printPseudoMoves();
+    chessboard.printChessboard();
     return 0;
 }
