@@ -194,11 +194,15 @@ struct Chessboard {
                                     (((fromSquare << 17) | (fromSquare >> 15)) & ~(FILE_H)) |
                                     (((fromSquare << 10) | (fromSquare >> 6)) & ~(FILE_G | FILE_H));
 
-            //whitePawnAttacks[square] = ((fromSquare & RANK_2) != 0) ? north(fromSquare) | (fromSquare << 16) : (north(fromSquare) & ~(RANK_8));
-            //blackPawnAttacks[square] = ((fromSquare & RANK_7) != 0) ? south(fromSquare) | (fromSquare >> 16) : (south(fromSquare) & ~(RANK_1));
             whitePawnAttacks[square] = north(fromSquare);
             blackPawnAttacks[square] = south(fromSquare);
         }
+
+        // Negative value used to indicate no possible en passant moves as it does not correspond to any square index
+        enPassant = -1;
+
+        // Players start out with all castling rights
+        whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;
     }
 
     // Determine if the opponent has a piece on a given square and return true if so
@@ -239,35 +243,43 @@ struct Chessboard {
         Bitboard fromSquares = (turn == White) ? whitePawns : blackPawns;
         if (turn == White) {
             while (fromSquares != 0) {
-                Bitboard fromSquare = BITBOARD(POP_LSB(fromSquares));
+                short fromSquareIndex = POP_LSB(fromSquares);
+                Bitboard fromSquare = BITBOARD(fromSquareIndex);
                 Bitboard toSquares = whitePawnAttacks[fromSquare];
                 // If there is an enemy piece in capture range, add the capture to the possible moves
                 if ((northeast(fromSquare) & blackPieces) != 0)
-                    toSquares |= (northeast(fromSquare));
+                    toSquares |= northeast(fromSquare);
                 if ((northwest(fromSquare) & blackPieces) != 0)
-                    toSquares |= (northwest(fromSquare));
+                    toSquares |= northwest(fromSquare);
                 // If it is the pawn's first move and there are no pieces in the way, add the double advance to the possible moves
-                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0) {
-                    toSquares |= (fromSquare << 16);
-                    // Store the move as a possible en passant
-                    enPassant = fromSquare;
+                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0)
+                    toSquares |= fromSquare << 16;
+
+                // Add the possible moves
+                while (toSquares != 0) {
+                    short toSquare = POP_LSB(toSquares);
+                    addMove(fromSquare, toSquare);
                 }
             }
         }
         else {
             while (fromSquares != 0) {
-                Bitboard fromSquare = BITBOARD(POP_LSB(fromSquares));
+                short fromSquareIndex = POP_LSB(fromSquares);
+                Bitboard fromSquare = BITBOARD(fromSquareIndex);
                 Bitboard toSquares = blackPawnAttacks[fromSquare];
                 // If there is an enemy piece in capture range, add the capture to the possible moves
                 if ((southeast(fromSquare) & whitePieces) != 0)
-                    toSquares |= (southeast(fromSquare));
+                    toSquares |= southeast(fromSquare);
                 if ((southwest(fromSquare) & whitePieces) != 0)
-                    toSquares |= (southwest(fromSquare));
+                    toSquares |= southwest(fromSquare);
                 // If it is the pawn's first move and there are no pieces in the way, add the double advance to the possible moves
-                if ((fromSquare & RANK_2) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0) {
-                    toSquares |= (fromSquare >> 16);
-                    // Store the move as a possible en passant
-                    enPassant = fromSquare;
+                if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0)
+                    toSquares |= fromSquare >> 16;
+
+                // Add the possible moves
+                while (toSquares != 0) {
+                    short toSquare = POP_LSB(toSquares);
+                    addMove(fromSquare, toSquare);
                 }
             }
         }
@@ -287,5 +299,8 @@ struct Chessboard {
 };
 
 int main () {
+    Chessboard chessboard;
+    chessboard.generatePawnMoves();
+    chessboard.printPseudoMoves();
     return 0;
 }
