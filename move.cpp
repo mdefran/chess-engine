@@ -1,6 +1,5 @@
 #include "move.h"
-#include "chess.cpp"
-#include <stdio.h>
+#include <iostream>
 
 Move::Move() {
     // Represents the null move, quiet and does not change board state

@@ -3,9 +3,7 @@
 
 #include <cstdint>
 #include <list>
-#include "chess.cpp"
-
-typedef std::list<Move> MoveList;
+#include "bitboard.h"
 
 class Move {
 private:
@@ -54,5 +52,7 @@ public:
     bool isPromotion();
     void printMove();
 };
+
+typedef std::list<Move> MoveList;
 
 #endif // MOVE_H
