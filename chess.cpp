@@ -33,14 +33,6 @@ enum Square {
     h8, g8, f8, e8, d8, c8, b8, a8
 };
 
-enum MoveType {
-    Quiet,
-    Capture,
-    Promotion,
-    Castle,
-    EnPassant
-};
-
 /*
 Bitboards are 64-bit variables used to represent the location of pieces on the board.
 Each bit corresponds to a square on the chessboard. This starts from the bottom left of the board, traversed in row-major order.
@@ -48,16 +40,6 @@ The presence of a piece on a square is indicated by a value of 1, while the abse
 */
 typedef uint64_t Bitboard;
 
-/*
-Moves are represented by 16-bit variables.
-Bits 0-5 represent the destination square.
-Bits 6-11 represent the origin square.
-
-For example:
-
-Square 11 (E2) to square 27 (E4).
-0000 001011 011011: Represents E2E4, a common opening.
-*/
 typedef uint16_t Move;
 typedef std::list<Move> MovesList;
 
@@ -159,7 +141,7 @@ struct Chessboard {
     MovesList pseudoLegalMoves, legalMoves;
 
     // Variable to store double pawn moves that could enable an en passant
-    short enPassant;
+    unsigned short enPassant;
     bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
 
     Chessboard() {
@@ -209,20 +191,20 @@ struct Chessboard {
     }
 
     // Determine if the opponent has a piece on a given square and return true if so
-    bool enemyAt(short square) {
+    bool enemyAt(unsigned short square) {
         Bitboard enemyPieces = (turn == White) ? blackPieces : whitePieces;
         return enemyPieces & BITBOARD(square);
     }
 
     // Efficiently store a move in the pseudo legal moves list
-    void addMove(short fromSquare, short toSquare) {
+    void addMove(unsigned short fromSquare, unsigned short toSquare) {
         Move move = fromSquare | (toSquare << 6);
         pseudoLegalMoves.push_back(move);
     }
 
     // Generate pseudo legal king moves for the current player using the attack maps
     void generateKingMoves() {
-        short fromSquareIndex = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
+        unsigned short fromSquareIndex = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
         Bitboard fromSquare = BITBOARD(fromSquareIndex);
         Bitboard toSquares = kingAttacks[fromSquareIndex];
 
@@ -242,7 +224,7 @@ struct Chessboard {
     void generateKnightMoves() {
         Bitboard fromSquares = (turn == White) ? whiteKnights : blackKnights;
         while (fromSquares != 0) {
-            short fromSquare = POP_LSB(fromSquares);
+            unsigned short fromSquare = POP_LSB(fromSquares);
             Bitboard toSquares = knightAttacks[fromSquare];
 
             while (toSquares != 0) {
@@ -254,7 +236,7 @@ struct Chessboard {
     void generatePawnMoves() {
         Bitboard fromSquares = (turn == White) ? whitePawns : blackPawns;
         while (fromSquares != 0) {
-            short fromSquareIndex = POP_LSB(fromSquares);
+            unsigned short fromSquareIndex = POP_LSB(fromSquares);
             Bitboard fromSquare = BITBOARD(fromSquareIndex);
             Bitboard toSquares = (turn == White) ? whitePawnAttacks[fromSquareIndex] : blackPawnAttacks[fromSquareIndex];
 
@@ -288,8 +270,8 @@ struct Chessboard {
 
     void printPseudoMoves() {
         for (const auto &move : pseudoLegalMoves) {
-            short from = move & 0x3F;
-            short to = (move >> 6) & 0x3F;
+            unsigned short from = move & 0x3F;
+            unsigned short to = (move >> 6) & 0x3F;
             std::cout << static_cast<Square>(from) << " " << static_cast<Square>(to) << std::endl;
         }
     }
