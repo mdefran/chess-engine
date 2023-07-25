@@ -40,7 +40,7 @@ Chessboard::Chessboard() {
     }
 
     // Negative value used to indicate no possible en passant moves as it does not correspond to any square index
-    enPassant = -1;
+    Bitboard enPassant = 0ULL;
 
     // Players start out with all castling rights
     whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;

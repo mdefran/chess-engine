@@ -3,7 +3,7 @@
 #include "bitboard.h"
 #include "types.h"
 
-// Generate pseudo legal king moves for the current player using the attack maps
+// Generate pseudo legal king moves for the current player using the attack maps and checking for castling rights
 void generateKingMoves(Chessboard &chessboard) {
     unsigned short fromSquareIndex = (chessboard.turn == White) ? POP_LSB(chessboard.whiteKing) : POP_LSB(chessboard.blackKing);
     Bitboard fromSquare = BITBOARD(fromSquareIndex);
@@ -55,6 +55,7 @@ void generateKnightMoves(Chessboard &chessboard) {
     }
 }
 
+// Generate pseudo legal pawn moves for the current player using the attack maps and manually checking for double advances, captures, and en passant
 void generatePawnMoves(Chessboard &chessboard) {
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whitePawns : chessboard.blackPawns;
     while (fromSquares != 0) {
@@ -72,6 +73,11 @@ void generatePawnMoves(Chessboard &chessboard) {
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::Capture));
             if ((northwest(fromSquare) & chessboard.blackPieces) != 0)
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::Capture));
+            // Check for en passant
+            if (chessboard.enPassant == east(fromSquare))
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::EnPassant));
+            if (chessboard.enPassant == west(fromSquare))
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::EnPassant));
         } else {
             // Check for initial double advance conditions
             if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & chessboard.allPieces) == 0)
@@ -81,6 +87,11 @@ void generatePawnMoves(Chessboard &chessboard) {
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::Capture));
             if ((southwest(fromSquare) & chessboard.whitePieces) != 0)
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::Capture));
+            // Check for en passant
+            if (chessboard.enPassant == east(fromSquare))
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::EnPassant));
+            if (chessboard.enPassant == west(fromSquare))
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::EnPassant));
         }
 
         // Add normal advances
@@ -89,4 +100,9 @@ void generatePawnMoves(Chessboard &chessboard) {
             chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
         }
     }
+}
+
+// Generate pseudo legal bishop moves for the current player using magic bitboards as a perfect hashing function
+void generateRookMoves(Chessboard &chessboard) {
+
 }

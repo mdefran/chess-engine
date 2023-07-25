@@ -35,7 +35,7 @@ struct Chessboard {
     MoveList pseudoLegalMoves, legalMoves, pastMoves;
 
     // Variable to store double pawn moves that could enable an en passant
-    unsigned short enPassant;
+    Bitboard enPassant;
 
     // Used to track castling rights for each side
     bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
