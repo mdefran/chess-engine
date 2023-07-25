@@ -176,9 +176,9 @@ struct Chessboard {
         blackRooks = 0x8100000000000000ULL;
         blackQueen = 0x1000000000000000ULL;
         blackKing = 0x0800000000000000ULL;
-        blackPieces = 0xFFFF00000F0000ULL;
+        blackPieces = 0xFFFF000000000000ULL;
 
-        turn = White;
+        turn = Black;
         
         // Generate attack map lookup tables for knights and kings
         for (int square = 0; square < 64; square++) {
@@ -221,6 +221,7 @@ struct Chessboard {
     void generateKingMoves() {
         short fromSquare = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
         Bitboard toSquares = kingAttacks[fromSquare];
+
         while (toSquares != 0) {
             addMove(fromSquare, POP_LSB(toSquares));
         }
@@ -232,6 +233,7 @@ struct Chessboard {
         while (fromSquares != 0) {
             short fromSquare = POP_LSB(fromSquares);
             Bitboard toSquares = knightAttacks[fromSquare];
+
             while (toSquares != 0) {
                 addMove(fromSquare, POP_LSB(toSquares));
             }
@@ -250,7 +252,7 @@ struct Chessboard {
                 // Check for initial double advance conditions
                 if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0)
                     toSquares |= fromSquare << 16;
-                // Check for capture conditions
+                // Check for diagonal pieces to capture
                 if ((northeast(fromSquare) & blackPieces) != 0)
                     toSquares |= northeast(fromSquare);
                 if ((northwest(fromSquare) & blackPieces) != 0)
@@ -259,7 +261,7 @@ struct Chessboard {
                 // Check for initial double advance conditions
                 if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0)
                     toSquares |= fromSquare >> 16;
-                // Check for capture conditions
+                // Check for diagonal pieces to capture
                 if ((southeast(fromSquare) & whitePieces) != 0)
                     toSquares |= southeast(fromSquare);
                 if ((southwest(fromSquare) & whitePieces) != 0)
@@ -272,7 +274,7 @@ struct Chessboard {
             }
         }
     }
-    
+
     void printPseudoMoves() {
         for (const auto &move : pseudoLegalMoves) {
             short from = move & 0x3F;
