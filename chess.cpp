@@ -186,77 +186,8 @@ struct Chessboard {
             blackPawnAttacks[square] = ((fromSquare & RANK_7) != 0) ? south(fromSquare) | (fromSquare >> 16) : (south(fromSquare) & ~(RANK_1));
         }
     }
-
-    /*MovesList targetedBy(short square) {
-        turn = (turn == White) ? Black : White;
-        generateLegalMoves();
-        MovesList captures;
-        for (const auto &move : legalMoves)
-            if (isCapture(move))
-                captures.push_back(move);
-        // Change turn back
-        return captures;
-    }*/
-
-    bool enemyAt(short square) {
-        Bitboard enemyPieces = (turn == White) ? blackPieces : whitePieces;
-        return enemyPieces & (1ULL << square);
-    }
-
-    void addMove(short fromSquare, short toSquare) {
-        Move move = fromSquare | (toSquare << 6);
-        pseudoLegalMoves.push_back(move);
-    }
-
-    void generateKingMoves() {
-        short fromSquare = (turn == White) ? POP_LSB(whiteKing) : POP_LSB(blackKing);
-        Bitboard toSquares = kingAttacks[fromSquare];
-        while (toSquares != 0) {
-            addMove(fromSquare, POP_LSB(toSquares));
-        }
-    }
-
-    void generateKnightMoves() {
-        Bitboard fromSquares = (turn == White) ? whiteKnights : blackKnights;
-        while (fromSquares != 0) {
-            short fromSquare = POP_LSB(fromSquares);
-            Bitboard toSquares = knightAttacks[fromSquare];
-            while (toSquares != 0) {
-                addMove(fromSquare, POP_LSB(toSquares));
-            }
-        }
-    }
-
-    void generatePawnMoves() {
-        Bitboard fromSquares = (turn == White) ? whitePawns : blackPawns;
-        while (fromSquares != 0) {
-            short fromSquare = POP_LSB(fromSquares);
-            Bitboard toSquares = (turn == White) ? whitePawnAttacks[fromSquare] : blackPawnAttacks[fromSquare];
-            while (toSquares != 0) {
-                addMove(fromSquare, POP_LSB(toSquares));
-                if (turn == White && enemyAt(northeast(fromSquare))) addMove(fromSquare, northeast(fromSquare));
-            }
-        }
-    }
-
-    void printPseudoMoves() {
-        for (const auto &move : pseudoLegalMoves) {
-            short from = move & 0x3F;
-            short to = (move >> 6) & 0x3F;
-            std::cout << static_cast<Square>(from) << " " << static_cast<Square>(to) << std::endl;
-        }
-    }
-
-    void generateLegalMoves() {
-
-    }
 };
 
 int main () {
-    Chessboard chessboard;
-    chessboard.generateKnightMoves();
-    chessboard.generateKingMoves();
-    chessboard.generatePawnMoves();
-    chessboard.printPseudoMoves();
     return 0;
 }
