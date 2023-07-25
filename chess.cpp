@@ -182,7 +182,7 @@ struct Chessboard {
 
         allPieces = whitePieces | blackPieces;
 
-        turn = Black;
+        turn = White;
         
         // Generate attack map lookup tables for knights and kings
         for (int square = 0; square < 64; square++) {
@@ -192,11 +192,10 @@ struct Chessboard {
                                   southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
                                   west(fromSquare) | northwest(fromSquare);
 
-            // Edit boundary checking to within fromSquare to bitboard conversion if causing errors
-            knightAttacks[square] = (((fromSquare << 6) | (fromSquare >> 10)) & ~(FILE_A | FILE_B)) |
-                                    (((fromSquare << 15) | (fromSquare >> 17)) & ~(FILE_A)) |
-                                    (((fromSquare << 17) | (fromSquare >> 15)) & ~(FILE_H)) |
-                                    (((fromSquare << 10) | (fromSquare >> 6)) & ~(FILE_G | FILE_H));
+            knightAttacks[square] = (((fromSquare & ~(FILE_G | FILE_H | RANK_8)) << 6) | ((fromSquare & ~(FILE_G | FILE_H | RANK_1)) >> 10)) |
+                                    (((fromSquare & ~(FILE_H | RANK_7 | RANK_8)) << 15) | ((fromSquare & ~(FILE_H | RANK_1 | RANK_2)) >> 17)) |
+                                    (((fromSquare & ~(FILE_A | RANK_7 | RANK_8)) << 17) | ((fromSquare & ~(FILE_A | RANK_1 | RANK_2)) >> 15)) |
+                                    (((fromSquare & ~(FILE_A | FILE_B | RANK_8)) << 10) | ((fromSquare & ~(FILE_A | FILE_B | RANK_1)) >> 6));
 
             whitePawnAttacks[square] = north(fromSquare);
             blackPawnAttacks[square] = south(fromSquare);
@@ -341,6 +340,7 @@ struct Chessboard {
 
 int main () {
     Chessboard chessboard;
-    chessboard.printChessboard();
+    chessboard.generateKnightMoves();
+    chessboard.printPseudoMoves();
     return 0;
 }
