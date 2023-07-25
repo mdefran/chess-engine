@@ -31,11 +31,11 @@ void generateKingMoves(Chessboard &chessboard) {
         }
     }
 
+    // Add normal moves
     while (toSquares != 0) {
         unsigned short toSquare = POP_LSB(toSquares);
         Move::MoveType type = (toSquare & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
-        move = Move(fromSquareIndex, toSquare, type);
-        chessboard.pseudoLegalMoves.push_back(move);
+        chessboard.pseudoLegalMoves.push_back(Move(fromSquareIndex, toSquare, type));
     }
 }
 
@@ -46,8 +46,11 @@ void generateKnightMoves(Chessboard &chessboard) {
         unsigned short fromSquare = POP_LSB(fromSquares);
         Bitboard toSquares = chessboard.knightAttacks[fromSquare];
 
+        Move move;
         while (toSquares != 0) {
-            addMove(fromSquare, POP_LSB(toSquares));
+            unsigned short toSquare = POP_LSB(toSquares);
+            Move::MoveType type = (toSquare & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
+            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, type));
         }
     }
 }
@@ -60,29 +63,30 @@ void generatePawnMoves(Chessboard &chessboard) {
         Bitboard toSquares = (chessboard.turn == White) ? chessboard.whitePawnAttacks[fromSquareIndex] : chessboard.blackPawnAttacks[fromSquareIndex];
 
         // Consider conditional moves
-        if (turn == White) {
+        if (chessboard.turn == White) {
             // Check for initial double advance conditions
             if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & chessboard.allPieces) == 0)
-                toSquares |= fromSquare << 16;
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, (fromSquare << 16), Move::DoublePawnPush));
             // Check for diagonal pieces to capture
             if ((northeast(fromSquare) & chessboard.blackPieces) != 0)
-                toSquares |= northeast(fromSquare);
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::Capture));
             if ((northwest(fromSquare) & chessboard.blackPieces) != 0)
-                toSquares |= northwest(fromSquare);
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::Capture));
         } else {
             // Check for initial double advance conditions
             if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & chessboard.allPieces) == 0)
-                toSquares |= fromSquare >> 16;
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, (fromSquare >> 16), Move::DoublePawnPush));
             // Check for diagonal pieces to capture
             if ((southeast(fromSquare) & chessboard.whitePieces) != 0)
-                toSquares |= southeast(fromSquare);
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::Capture));
             if ((southwest(fromSquare) & chessboard.whitePieces) != 0)
-                toSquares |= southwest(fromSquare);
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::Capture));
         }
 
-        // Add the possible moves
+        // Add normal advances
         while (toSquares != 0) {
-            addMove(fromSquareIndex, POP_LSB(toSquares));
+            unsigned short toSquare = POP_LSB(toSquares);
+            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
         }
     }
 }
