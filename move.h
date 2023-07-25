@@ -2,7 +2,10 @@
 #define MOVE_H
 
 #include <cstdint>
+#include <list>
 #include "chess.cpp"
+
+typedef std::list<Move> MoveList;
 
 class Move {
 private:
@@ -49,6 +52,7 @@ public:
     bool isQuiet();
     bool isCapture();
     bool isPromotion();
+    void printMove();
 };
 
 #endif // MOVE_H
