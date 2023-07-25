@@ -238,53 +238,41 @@ struct Chessboard {
         }
     }
 
-    // Generate pseudo legal pawn moves for the current player 
     void generatePawnMoves() {
         Bitboard fromSquares = (turn == White) ? whitePawns : blackPawns;
-        if (turn == White) {
-            while (fromSquares != 0) {
-                short fromSquareIndex = POP_LSB(fromSquares);
-                Bitboard fromSquare = BITBOARD(fromSquareIndex);
-                Bitboard toSquares = whitePawnAttacks[fromSquare];
-                // If there is an enemy piece in capture range, add the capture to the possible moves
+        while (fromSquares != 0) {
+            short fromSquareIndex = POP_LSB(fromSquares);
+            Bitboard fromSquare = BITBOARD(fromSquareIndex);
+            Bitboard toSquares = (turn == White) ? whitePawnAttacks[fromSquareIndex] : blackPawnAttacks[fromSquareIndex];
+
+            // Consider conditional moves
+            if (turn == White) {
+                // Check for initial double advance conditions
+                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0)
+                    toSquares |= fromSquare << 16;
+                // Check for capture conditions
                 if ((northeast(fromSquare) & blackPieces) != 0)
                     toSquares |= northeast(fromSquare);
                 if ((northwest(fromSquare) & blackPieces) != 0)
                     toSquares |= northwest(fromSquare);
-                // If it is the pawn's first move and there are no pieces in the way, add the double advance to the possible moves
-                if ((fromSquare & RANK_2) != 0 && (((fromSquare << 8) | (fromSquare << 16)) & (whitePieces | blackPieces)) == 0)
-                    toSquares |= fromSquare << 16;
-
-                // Add the possible moves
-                while (toSquares != 0) {
-                    short toSquare = POP_LSB(toSquares);
-                    addMove(fromSquare, toSquare);
-                }
-            }
-        }
-        else {
-            while (fromSquares != 0) {
-                short fromSquareIndex = POP_LSB(fromSquares);
-                Bitboard fromSquare = BITBOARD(fromSquareIndex);
-                Bitboard toSquares = blackPawnAttacks[fromSquare];
-                // If there is an enemy piece in capture range, add the capture to the possible moves
+            } else {
+                // Check for initial double advance conditions
+                if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0)
+                    toSquares |= fromSquare >> 16;
+                // Check for capture conditions
                 if ((southeast(fromSquare) & whitePieces) != 0)
                     toSquares |= southeast(fromSquare);
                 if ((southwest(fromSquare) & whitePieces) != 0)
                     toSquares |= southwest(fromSquare);
-                // If it is the pawn's first move and there are no pieces in the way, add the double advance to the possible moves
-                if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & (whitePieces | blackPieces)) == 0)
-                    toSquares |= fromSquare >> 16;
+            }
 
-                // Add the possible moves
-                while (toSquares != 0) {
-                    short toSquare = POP_LSB(toSquares);
-                    addMove(fromSquare, toSquare);
-                }
+            // Add the possible moves
+            while (toSquares != 0) {
+                addMove(fromSquareIndex, POP_LSB(toSquares));
             }
         }
     }
-
+    
     void printPseudoMoves() {
         for (const auto &move : pseudoLegalMoves) {
             short from = move & 0x3F;
