@@ -21,23 +21,6 @@ Chessboard::Chessboard() {
     allPieces = whitePieces | blackPieces;
 
     turn = White;
-    
-    // Generate attack map lookup tables for knights and kings
-    for (int square = 0; square < 64; square++) {
-        Bitboard fromSquare = BITBOARD(square);
-
-        kingAttacks[square] = north(fromSquare) | northeast(fromSquare) | east(fromSquare) | 
-                                southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
-                                west(fromSquare) | northwest(fromSquare);
-
-        knightAttacks[square] = (((fromSquare & ~(FILE_G | FILE_H | RANK_8)) << 6) | ((fromSquare & ~(FILE_G | FILE_H | RANK_1)) >> 10)) |
-                                (((fromSquare & ~(FILE_H | RANK_7 | RANK_8)) << 15) | ((fromSquare & ~(FILE_H | RANK_1 | RANK_2)) >> 17)) |
-                                (((fromSquare & ~(FILE_A | RANK_7 | RANK_8)) << 17) | ((fromSquare & ~(FILE_A | RANK_1 | RANK_2)) >> 15)) |
-                                (((fromSquare & ~(FILE_A | FILE_B | RANK_8)) << 10) | ((fromSquare & ~(FILE_A | FILE_B | RANK_1)) >> 6));
-
-        whitePawnAttacks[square] = north(fromSquare);
-        blackPawnAttacks[square] = south(fromSquare);
-    }
 
     // Negative value used to indicate no possible en passant moves as it does not correspond to any square index
     Bitboard enPassant = 0ULL;

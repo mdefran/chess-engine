@@ -3,11 +3,33 @@
 #include "bitboard.h"
 #include "types.h"
 
+// Declare lookup tables for leaping pieces
+Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAttacks[64];
+
+// Initialize lookup tables
+void initializeAttackTables() {
+    for (int square = 0; square < 64; square++) {
+        Bitboard fromSquare = BITBOARD(square);
+
+        kingAttacks[square] = north(fromSquare) | northeast(fromSquare) | east(fromSquare) | 
+                                southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
+                                west(fromSquare) | northwest(fromSquare);
+
+        knightAttacks[square] = (((fromSquare & ~(FILE_G | FILE_H | RANK_8)) << 6) | ((fromSquare & ~(FILE_G | FILE_H | RANK_1)) >> 10)) |
+                                (((fromSquare & ~(FILE_H | RANK_7 | RANK_8)) << 15) | ((fromSquare & ~(FILE_H | RANK_1 | RANK_2)) >> 17)) |
+                                (((fromSquare & ~(FILE_A | RANK_7 | RANK_8)) << 17) | ((fromSquare & ~(FILE_A | RANK_1 | RANK_2)) >> 15)) |
+                                (((fromSquare & ~(FILE_A | FILE_B | RANK_8)) << 10) | ((fromSquare & ~(FILE_A | FILE_B | RANK_1)) >> 6));
+
+        whitePawnAttacks[square] = north(fromSquare);
+        blackPawnAttacks[square] = south(fromSquare);
+    }
+}
+
 // Generate pseudo legal king moves for the current player using the attack maps and checking for castling rights
 void generateKingMoves(Chessboard &chessboard) {
     unsigned short fromSquareIndex = (chessboard.turn == White) ? POP_LSB(chessboard.whiteKing) : POP_LSB(chessboard.blackKing);
     Bitboard fromSquare = BITBOARD(fromSquareIndex);
-    Bitboard toSquares = chessboard.kingAttacks[fromSquareIndex];
+    Bitboard toSquares = kingAttacks[fromSquareIndex];
 
     // Check for pseudo legal castling
     Move move;
@@ -44,7 +66,7 @@ void generateKnightMoves(Chessboard &chessboard) {
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteKnights : chessboard.blackKnights;
     while (fromSquares != 0) {
         unsigned short fromSquare = POP_LSB(fromSquares);
-        Bitboard toSquares = chessboard.knightAttacks[fromSquare];
+        Bitboard toSquares = knightAttacks[fromSquare];
 
         Move move;
         while (toSquares != 0) {
@@ -61,7 +83,7 @@ void generatePawnMoves(Chessboard &chessboard) {
     while (fromSquares != 0) {
         unsigned short fromSquareIndex = POP_LSB(fromSquares);
         Bitboard fromSquare = BITBOARD(fromSquareIndex);
-        Bitboard toSquares = (chessboard.turn == White) ? chessboard.whitePawnAttacks[fromSquareIndex] : chessboard.blackPawnAttacks[fromSquareIndex];
+        Bitboard toSquares = (chessboard.turn == White) ? whitePawnAttacks[fromSquareIndex] : blackPawnAttacks[fromSquareIndex];
 
         // Consider conditional moves
         if (chessboard.turn == White) {

@@ -27,9 +27,6 @@ struct Chessboard {
 
     // Active player
     Color turn;
-    
-    // Declare lookup tables for leaping pieces
-    Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAttacks[64];
 
     // Move lists for move generation and tracking
     MoveList pseudoLegalMoves, legalMoves, pastMoves;
@@ -47,7 +44,7 @@ struct Chessboard {
     MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
     MoveList generateLegalMoves(); // Generate only validated pseudo legal moves
 
-    // Move manipulation
+    // Board manipulation
     void push(Move move); // Play a move to the board
     void pop(); // Undo the last move made
     Move peek(); // View the last move made
