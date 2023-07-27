@@ -43,7 +43,8 @@ public:
     };
 
     Move();
-    Move(unsigned short fromSquare, unsigned short toSquare, MoveType moveType);
+    Move(Square fromSquare, Square toSquare, MoveType moveType);
+    Move(Bitboard fromSquare, Bitboard toSquare, MoveType moveType);
 
     Square getFromSquare();
     Square getToSquare();

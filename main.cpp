@@ -7,7 +7,7 @@
 
 int main () {
     Chessboard chessboard;
-    Move move = Move(static_cast<unsigned short>(Square::b1), static_cast<unsigned short>(Square::c3), Move::Quiet);
+    Move move = Move(Square::b1, Square::c3, Move::Quiet);
     printChessboard(chessboard);
     chessboard.push(move);
     printChessboard(chessboard);
