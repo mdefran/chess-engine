@@ -7,7 +7,8 @@ enum PieceType {
     Bishop,
     Rook,
     Queen,
-    King
+    King,
+    None
 };
 
 enum Color {

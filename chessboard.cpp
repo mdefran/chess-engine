@@ -29,8 +29,41 @@ Chessboard::Chessboard() {
     whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;
 }
 
-void Chessboard::push(Move move) {
+PieceType Chessboard::pieceAt(Square square) {
+    if (turn == White) {
+        if (GET_BIT(whitePawns, square) != 0) {
+            return PieceType::Pawn;
+        } else if (GET_BIT(whiteKnights, square) != 0) {
+            return PieceType::Knight;
+        } else if (GET_BIT(whiteBishops, square) != 0) {
+            return PieceType::Bishop;
+        } else if (GET_BIT(whiteQueen, square) != 0) {
+            return PieceType::Queen;
+        } else if (GET_BIT(whiteKing, square) != 0) {
+            return PieceType::King;
+        } else {
+            return PieceType::None;
+        }
+    } else {
+        if (GET_BIT(blackPawns, square) != 0) {
+            return PieceType::Pawn;
+        } else if (GET_BIT(blackKnights, square) != 0) {
+            return PieceType::Knight;
+        } else if (GET_BIT(blackBishops, square) != 0) {
+            return PieceType::Bishop;
+        } else if (GET_BIT(blackQueen, square) != 0) {
+            return PieceType::Queen;
+        } else if (GET_BIT(blackKing, square) != 0) {
+            return PieceType::King;
+        } else {
+            return PieceType::None;
+        }
+    }
+}
 
+void Chessboard::push(Move move) {
+    pastMoves.push_back(move);
+    Square fromSquare = move.getFromSquare(), toSquare = move.getToSquare();
 }
 
 void Chessboard::pop() {
@@ -42,7 +75,7 @@ Move Chessboard::peek() {
 }
 
 bool Chessboard::isCheck() {
-
+    
 }
 
 bool Chessboard::isCheckmate() {

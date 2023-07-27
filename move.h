@@ -2,7 +2,7 @@
 #define MOVE_H
 
 #include <cstdint>
-#include <list>
+#include <vector>
 #include "bitboard.h"
 #include "types.h"
 
@@ -55,6 +55,6 @@ public:
     bool isNull();
 };
 
-typedef std::list<Move> MoveList;
+typedef std::vector<Move> MoveList;
 
 #endif // MOVE_H

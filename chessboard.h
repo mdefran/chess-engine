@@ -44,6 +44,9 @@ struct Chessboard {
     MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
     MoveList generateLegalMoves(); // Generate only validated pseudo legal moves
 
+    // Square info
+    PieceType pieceAt(Square square);
+
     // Board manipulation
     void push(Move move); // Play a move to the board
     void pop(); // Undo the last move made

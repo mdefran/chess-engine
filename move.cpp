@@ -7,7 +7,7 @@ Move::Move() {
 }
 
 Move::Move(unsigned short fromSquare, unsigned short toSquare, MoveType moveType) {
-    this->move = (static_cast<unsigned short>(moveType) << 12) | (toSquare << 6) | (fromSquare);
+    this->move = (moveType << 12) | (toSquare << 6) | (fromSquare);
 }
 
 Square Move::getFromSquare() { return static_cast<Square>(this->move & 0x3F); }
