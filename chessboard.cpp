@@ -30,39 +30,21 @@ Chessboard::Chessboard() {
 }
 
 // Return the type of piece present at a given square
-PieceType Chessboard::pieceAt(Square square) {
-    if (turn == White) {
-        if (GET_BIT(whitePawns, square) != 0) {
-            return PieceType::Pawn;
-        } else if (GET_BIT(whiteKnights, square) != 0) {
-            return PieceType::Knight;
-        } else if (GET_BIT(whiteBishops, square) != 0) {
-            return PieceType::Bishop;
-        } else if (GET_BIT(whiteRooks, square) != 0) {
-            return PieceType::Rook;
-        } else if (GET_BIT(whiteQueen, square) != 0) {
-            return PieceType::Queen;
-        } else if (GET_BIT(whiteKing, square) != 0) {
-            return PieceType::King;
-        } else {
-            return PieceType::None;
-        }
+PieceType Chessboard::pieceAt(unsigned short square) {
+    if (GET_BIT(whitePawns, square) != 0 || GET_BIT(blackPawns, square) != 0) {
+        return PieceType::Pawn;
+    } else if (GET_BIT(whiteKnights, square) != 0 || GET_BIT(blackKnights, square) != 0) {
+        return PieceType::Knight;
+    } else if (GET_BIT(whiteBishops, square) != 0 || GET_BIT(blackBishops, square) != 0) {
+        return PieceType::Bishop;
+    } else if (GET_BIT(whiteRooks, square) != 0 || GET_BIT(blackRooks, square) != 0) {
+        return PieceType::Rook;
+    } else if (GET_BIT(whiteQueen, square) != 0 || GET_BIT(blackQueen, square) != 0) {
+        return PieceType::Queen;
+    } else if (GET_BIT(whiteKing, square) != 0 || GET_BIT(blackKing, square) != 0) {
+        return PieceType::King;
     } else {
-        if (GET_BIT(blackPawns, square) != 0) {
-            return PieceType::Pawn;
-        } else if (GET_BIT(blackKnights, square) != 0) {
-            return PieceType::Knight;
-        } else if (GET_BIT(blackBishops, square) != 0) {
-            return PieceType::Bishop;
-        } else if (GET_BIT(blackRooks, square) != 0) {
-            return PieceType::Rook;
-        } else if (GET_BIT(blackQueen, square) != 0) {
-            return PieceType::Queen;
-        } else if (GET_BIT(blackKing, square) != 0) {
-            return PieceType::King;
-        } else {
-            return PieceType::None;
-        }
+        return PieceType::None;
     }
 }
 
