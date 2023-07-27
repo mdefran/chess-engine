@@ -29,6 +29,7 @@ Chessboard::Chessboard() {
     whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;
 }
 
+// Return the type of piece present at a given square
 PieceType Chessboard::pieceAt(Square square) {
     if (turn == White) {
         if (GET_BIT(whitePawns, square) != 0) {
@@ -37,6 +38,8 @@ PieceType Chessboard::pieceAt(Square square) {
             return PieceType::Knight;
         } else if (GET_BIT(whiteBishops, square) != 0) {
             return PieceType::Bishop;
+        } else if (GET_BIT(whiteRooks, square) != 0) {
+            return PieceType::Rook;
         } else if (GET_BIT(whiteQueen, square) != 0) {
             return PieceType::Queen;
         } else if (GET_BIT(whiteKing, square) != 0) {
@@ -51,6 +54,8 @@ PieceType Chessboard::pieceAt(Square square) {
             return PieceType::Knight;
         } else if (GET_BIT(blackBishops, square) != 0) {
             return PieceType::Bishop;
+        } else if (GET_BIT(blackRooks, square) != 0) {
+            return PieceType::Rook;
         } else if (GET_BIT(blackQueen, square) != 0) {
             return PieceType::Queen;
         } else if (GET_BIT(blackKing, square) != 0) {
@@ -61,27 +66,71 @@ PieceType Chessboard::pieceAt(Square square) {
     }
 }
 
+// Push a move onto the board
 void Chessboard::push(Move move) {
     pastMoves.push_back(move);
     Square fromSquare = move.getFromSquare(), toSquare = move.getToSquare();
-}
+    PieceType fromPiece = pieceAt(fromSquare);
+    PieceType toPiece = (move.isCapture()) ? pieceAt(toSquare) : PieceType::None;
 
-void Chessboard::pop() {
+    Bitboard &movingBoard = (turn == White) ? whitePawns : blackPawns;
+    switch (fromPiece) {
+        case PieceType::Pawn:
+            // Originally initialized to pawn board, no need to change
+            break;
+        case PieceType::Knight:
+            movingBoard = (turn == White) ? whiteKnights : blackKnights;
+            break;
+        case PieceType::Bishop:
+            movingBoard = (turn == White) ? whiteBishops : blackBishops;
+            break;
+        case PieceType::Rook:
+            movingBoard = (turn == White) ? whiteRooks : blackRooks;
+            break;
+        case PieceType::Queen:
+            movingBoard = (turn == White) ? whiteQueen : blackQueen;
+            break;
+        case PieceType::King:
+            movingBoard = (turn == White) ? whiteKing : blackKing;
+            break;
+    }
 
-}
+    Bitboard &captureBoard = (turn == White) ? blackPieces : whitePieces; // Will get cleared regardless
+    switch (toPiece) {
+        case PieceType::None:
+            break;
+        case PieceType::Pawn:
+            captureBoard = (turn == White) ? blackPawns : whitePawns;
+        case PieceType::Knight:
+            captureBoard = (turn == White) ? blackKnights : whiteKnights;
+            break;
+        case PieceType::Bishop:
+            captureBoard = (turn == White) ? blackBishops : whiteBishops;
+            break;
+        case PieceType::Rook:
+            captureBoard = (turn == White) ? blackRooks : whiteRooks;
+            break;
+        case PieceType::Queen:
+            captureBoard = (turn == White) ? blackQueen : whiteQueen;
+            break;
+        case PieceType::King:
+            captureBoard = (turn == White) ? blackKing : whiteKing;
+            break;
+    }
 
-Move Chessboard::peek() {
+    // Update specific piece type boards
+    CLEAR_BIT(movingBoard, fromSquare);
+    SET_BIT(movingBoard, toSquare);
+    CLEAR_BIT(captureBoard, toSquare);
 
-}
-
-bool Chessboard::isCheck() {
-    
-}
-
-bool Chessboard::isCheckmate() {
-
-}
-
-Color Chessboard::winningSide() {
-
+    // Update boards for all piece types
+    if (turn == White) {
+        CLEAR_BIT(whitePieces, fromSquare);
+        SET_BIT(whitePieces, toSquare);
+        CLEAR_BIT(blackPieces, toSquare);
+    } else {
+        CLEAR_BIT(blackPieces, fromSquare);
+        SET_BIT(blackPieces, toSquare);
+        CLEAR_BIT(whitePieces, toSquare);
+    }
 }
