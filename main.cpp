@@ -12,5 +12,7 @@ int main () {
     std::cout << "FROM " << move.getFromSquare() << " TO " << move.getToSquare() << " AS " << move.getMoveType() << std::endl;
     chessboard.push(move);
     std::cout << std::endl;
+    printBitboard(chessboard.whiteKnights);
+    printBitboard(chessboard.whitePieces);
     printChessboard(chessboard);
 }

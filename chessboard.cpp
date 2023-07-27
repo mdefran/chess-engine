@@ -1,4 +1,6 @@
 #include "chessboard.h"
+#include <iostream>
+#include "board_visualization.h"
 
 Chessboard::Chessboard() {
     // Initialize the bitboards to match the piece's positions at the start of the game
@@ -55,55 +57,55 @@ void Chessboard::push(Move move) {
     PieceType fromPiece = pieceAt(fromSquare);
     PieceType toPiece = (move.isCapture()) ? pieceAt(toSquare) : PieceType::None;
 
-    Bitboard &movingBoard = (turn == White) ? whitePawns : blackPawns;
+    Bitboard *movingBoard;
     switch (fromPiece) {
         case PieceType::Pawn:
-            // Originally initialized to pawn board, no need to change
+            movingBoard = (turn == White) ? &whitePawns : &blackPawns;
             break;
         case PieceType::Knight:
-            movingBoard = (turn == White) ? whiteKnights : blackKnights;
+            movingBoard = (turn == White) ? &whiteKnights : &blackKnights;
             break;
         case PieceType::Bishop:
-            movingBoard = (turn == White) ? whiteBishops : blackBishops;
+            movingBoard = (turn == White) ? &whiteBishops : &blackBishops;
             break;
         case PieceType::Rook:
-            movingBoard = (turn == White) ? whiteRooks : blackRooks;
+            movingBoard = (turn == White) ? &whiteRooks : &blackRooks;
             break;
         case PieceType::Queen:
-            movingBoard = (turn == White) ? whiteQueen : blackQueen;
+            movingBoard = (turn == White) ? &whiteQueen : &blackQueen;
             break;
         case PieceType::King:
-            movingBoard = (turn == White) ? whiteKing : blackKing;
+            movingBoard = (turn == White) ? &whiteKing : &blackKing;
             break;
     }
 
-    Bitboard &captureBoard = (turn == White) ? blackPieces : whitePieces; // Will get cleared regardless
+    Bitboard *captureBoard = (turn == White) ? &blackPieces : &whitePieces; // Will get cleared regardless
     switch (toPiece) {
         case PieceType::None:
             break;
         case PieceType::Pawn:
-            captureBoard = (turn == White) ? blackPawns : whitePawns;
+            captureBoard = (turn == White) ? &blackPawns : &whitePawns;
         case PieceType::Knight:
-            captureBoard = (turn == White) ? blackKnights : whiteKnights;
+            captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
             break;
         case PieceType::Bishop:
-            captureBoard = (turn == White) ? blackBishops : whiteBishops;
+            captureBoard = (turn == White) ? &blackBishops : &whiteBishops;
             break;
         case PieceType::Rook:
-            captureBoard = (turn == White) ? blackRooks : whiteRooks;
+            captureBoard = (turn == White) ? &blackRooks : &whiteRooks;
             break;
         case PieceType::Queen:
-            captureBoard = (turn == White) ? blackQueen : whiteQueen;
+            captureBoard = (turn == White) ? &blackQueen : &whiteQueen;
             break;
         case PieceType::King:
-            captureBoard = (turn == White) ? blackKing : whiteKing;
+            captureBoard = (turn == White) ? &blackKing : &whiteKing;
             break;
     }
 
     // Update specific piece type boards
-    CLEAR_BIT(movingBoard, fromSquare);
-    SET_BIT(movingBoard, toSquare);
-    CLEAR_BIT(captureBoard, toSquare);
+    CLEAR_BIT(*movingBoard, fromSquare);
+    SET_BIT(*movingBoard, toSquare);
+    CLEAR_BIT(*captureBoard, toSquare);
 
     // Update boards for all piece types
     if (turn == White) {
