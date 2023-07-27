@@ -118,3 +118,12 @@ void Chessboard::push(Move move) {
         CLEAR_BIT(whitePieces, toSquare);
     }
 }
+
+// Take back the last move made
+void Chessboard::pop() {
+    Move lastMove = pastMoves.back();
+    pastMoves.pop_back();
+    Move undoMove = Move(lastMove.getToSquare(), lastMove.getFromSquare(), Move::Quiet);
+    this->push(undoMove);
+    pastMoves.pop_back();
+}

@@ -50,7 +50,6 @@ struct Chessboard {
     // Board manipulation
     void push(Move move); // Play a move to the board
     void pop(); // Undo the last move made
-    Move peek(); // View the last move made
 
     // Game ending detection
     bool isCheck();
