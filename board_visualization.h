@@ -8,4 +8,4 @@
 void printBitboard(Bitboard bitboard);
 void printChessboard(Chessboard &chessboard);
 
-#endif VISUAL_H
+#endif // VISUAL_H
