@@ -1,6 +1,7 @@
 #include "chessboard.h"
 #include <iostream>
 #include "board_visualization.h"
+#include "move.h"
 
 Chessboard::Chessboard() {
     // Initialize the bitboards to match the piece's positions at the start of the game
@@ -52,11 +53,75 @@ PieceType Chessboard::pieceAt(unsigned short square) {
 
 // Push a move onto the board
 void Chessboard::push(Move move) {
+    // Gather move information
     pastMoves.push_back(move);
     Square fromSquare = move.getFromSquare(), toSquare = move.getToSquare();
+    Move::MoveType moveType = move.getMoveType();
     PieceType fromPiece = pieceAt(fromSquare);
     PieceType toPiece = (move.isCapture()) ? pieceAt(toSquare) : PieceType::None;
 
+    // If a color's king moves, disable castling for that color
+    if (fromPiece == PieceType::King) {
+        if (turn == White) {
+            whiteKingCastle = whiteQueenCastle = false;
+        } else {
+            blackKingCastle = blackQueenCastle = false;
+        }
+    }
+
+    // If a rook moves, disable castling for that corner
+    if (fromSquare == Square::h1)
+        whiteKingCastle = false;
+    if (fromSquare == Square::a1)
+        whiteQueenCastle = false;
+    if (fromSquare == Square::h8)
+        blackKingCastle = false;
+    if (fromSquare == Square::a8)
+        blackQueenCastle = false;
+
+    // Handle extra rook movement for castling
+    if (turn == White && moveType == Move::KingCastle) {
+        whiteKingCastle = false;
+        this->push(Move(Square::h1, Square::f1, Move::Quiet));
+        this->pop(); // Remove the extra move just logged as castling is recorded as one move
+    } else if (turn == White && moveType == Move::QueenCastle) {
+        whiteQueenCastle = false;
+        this->push(Move(Square::a1, Square::d1, Move::Quiet));
+        this->pop();
+    } else if (turn == Black && moveType == Move::KingCastle) {
+        blackKingCastle == false;
+        this->push(Move(Square::h8, Square::f8, Move::Quiet));
+        this->pop();
+    } else if (turn == Black && moveType == Move::QueenCastle) {
+        blackQueenCastle == false;
+        this->push(Move(Square::a8, Square::d8, Move::Quiet));
+        this->pop();
+    }
+
+    // Store en passant squares if necessary
+    if (moveType == Move::DoublePawnPush)
+        enPassant = move.getToSquare();
+
+    // Perform en passant pawn capture
+    if (moveType = Move::EnPassant) {
+        if (BITBOARD(toSquare) == northeast(BITBOARD(fromSquare))) {
+            unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
+            // We know the captured pawn is black since the advancing pawn is moving north
+            CLEAR_BIT(blackPawns, captureSquare);
+        } else if (BITBOARD(toSquare) == northwest(BITBOARD(fromSquare))) {
+            unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
+            CLEAR_BIT(blackPawns, captureSquare);
+        } else if (BITBOARD(toSquare) == southeast(BITBOARD(fromSquare))) {
+            unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
+            // We know the captured pawn is white since the advanced pawn is moving south
+            CLEAR_BIT(whitePawns, captureSquare);
+        } else {
+            unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
+            CLEAR_BIT(whitePawns, captureSquare);
+        }
+    }
+
+    // Move piece on its board
     Bitboard *movingBoard;
     switch (fromPiece) {
         case PieceType::Pawn:
@@ -78,34 +143,58 @@ void Chessboard::push(Move move) {
             movingBoard = (turn == White) ? &whiteKing : &blackKing;
             break;
     }
-
-    Bitboard *captureBoard = (turn == White) ? &blackPieces : &whitePieces; // Will get cleared regardless
-    switch (toPiece) {
-        case PieceType::None:
-            break;
-        case PieceType::Pawn:
-            captureBoard = (turn == White) ? &blackPawns : &whitePawns;
-        case PieceType::Knight:
-            captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
-            break;
-        case PieceType::Bishop:
-            captureBoard = (turn == White) ? &blackBishops : &whiteBishops;
-            break;
-        case PieceType::Rook:
-            captureBoard = (turn == White) ? &blackRooks : &whiteRooks;
-            break;
-        case PieceType::Queen:
-            captureBoard = (turn == White) ? &blackQueen : &whiteQueen;
-            break;
-        case PieceType::King:
-            captureBoard = (turn == White) ? &blackKing : &whiteKing;
-            break;
-    }
-
-    // Update specific piece type boards
     CLEAR_BIT(*movingBoard, fromSquare);
     SET_BIT(*movingBoard, toSquare);
-    CLEAR_BIT(*captureBoard, toSquare);
+
+    // Erase pieces at capture position
+    if (move.isCapture()) {
+        Bitboard *captureBoard;
+        switch (toPiece) {
+            case PieceType::None:
+                break;
+            case PieceType::Pawn:
+                captureBoard = (turn == White) ? &blackPawns : &whitePawns;
+            case PieceType::Knight:
+                captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
+                break;
+            case PieceType::Bishop:
+                captureBoard = (turn == White) ? &blackBishops : &whiteBishops;
+                break;
+            case PieceType::Rook:
+                captureBoard = (turn == White) ? &blackRooks : &whiteRooks;
+                break;
+            case PieceType::Queen:
+                captureBoard = (turn == White) ? &blackQueen : &whiteQueen;
+                break;
+            case PieceType::King:
+                captureBoard = (turn == White) ? &blackKing : &whiteKing;
+                break;
+        }
+
+        CLEAR_BIT(*captureBoard, toSquare);
+    }
+
+    // Perform promotions
+    if (move.isPromotion()) {
+        Bitboard *promotionBoard;
+        switch (moveType) {
+            case Move::KnightPromotion: case Move::KnightPromotionCapture:
+                promotionBoard = (turn == White) ? &whiteKnights : &blackKnights;
+                break;
+            case Move::BishopPromotion: case Move::BishopPromotionCapture:
+                promotionBoard = (turn == White) ? &whiteBishops : &blackBishops;
+                break;
+            case Move::RookPromotion: case Move::RookPromotionCapture:
+                promotionBoard = (turn == White) ? &whiteRooks : &blackRooks;
+                break;
+            case Move::QueenPromotion: case Move::QueenPromotionCapture:
+                promotionBoard = (turn == White) ? &whiteQueen : &blackQueen;
+                break;
+        }
+
+        CLEAR_BIT(*movingBoard, toSquare); // Remove temporary pawn move
+        SET_BIT(*promotionBoard, toSquare); // Set new piece type as present
+    }
 
     // Update boards for all piece types
     if (turn == White) {
@@ -123,7 +212,14 @@ void Chessboard::push(Move move) {
 void Chessboard::pop() {
     Move lastMove = pastMoves.back();
     pastMoves.pop_back();
-    Move undoMove = Move(lastMove.getToSquare(), lastMove.getFromSquare(), Move::Quiet);
+
+    // Handle castling
+
+    // Handle en passant
+
+    // Handle promotions
+
+    Move undoMove = Move(lastMove.getToSquare(), lastMove.getFromSquare(), lastMove.getMoveType());
     this->push(undoMove);
     pastMoves.pop_back();
 }

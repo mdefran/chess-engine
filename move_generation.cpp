@@ -35,20 +35,20 @@ void generateKingMoves(Chessboard &chessboard) {
     Move move;
     if (chessboard.turn == White) {
         if (chessboard.whiteKingCastle == true && (chessboard.allPieces & (0x6ULL)) == 0) {
-            move = Move(3, 0, Move::KingCastle);
+            move = Move(Square::e1, Square::g1, Move::KingCastle);
             chessboard.pseudoLegalMoves.push_back(move);
         }
         if (chessboard.whiteQueenCastle == true && (chessboard.allPieces & (0x70ULL)) == 0) {
-            move = Move(3, 7, Move::QueenCastle);
+            move = Move(Square::e1, Square::c1, Move::QueenCastle);
             chessboard.pseudoLegalMoves.push_back(move);
         }
     } else {
         if (chessboard.blackKingCastle == true && (chessboard.allPieces & (0x600000000000000ULL)) == 0) {
-            move = Move(59, 56, Move::KingCastle);
+            move = Move(Square::e8, Square::g8, Move::KingCastle);
             chessboard.pseudoLegalMoves.push_back(move);
         }
         if (chessboard.blackQueenCastle == true && (chessboard.allPieces & (0x7000000000000000) == 0)) {
-            move = Move(59, 63, Move::QueenCastle);
+            move = Move(Square::e8, Square::c8, Move::QueenCastle);
             chessboard.pseudoLegalMoves.push_back(move);
         }
     }
@@ -124,7 +124,13 @@ void generatePawnMoves(Chessboard &chessboard) {
     }
 }
 
-// Generate pseudo legal bishop moves for the current player using magic bitboards as a perfect hashing function
-void generateRookMoves(Chessboard &chessboard) {
 
+
+// Change move generation functions to take parameter of movelist to append to and have this generate a movelist from that
+MoveList Chessboard::generatePseudoLegalMoves() {
+    
+}
+
+MoveList Chessboard::generateLegalMoves() {
+    MoveList pseudoLegalMoves = generatePseudoLegalMoves();
 }

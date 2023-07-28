@@ -46,6 +46,7 @@ struct Chessboard {
 
     // Square info
     PieceType pieceAt(unsigned short square);
+    bool underAttack(unsigned short square);
 
     // Board manipulation
     void push(Move move); // Play a move to the board
