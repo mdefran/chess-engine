@@ -60,11 +60,11 @@ void Chessboard::push(Move move) {
     PieceType fromPiece = pieceAt(fromSquare);
     PieceType toPiece = (move.isCapture()) ? pieceAt(toSquare) : PieceType::None;
 
-    // If a color's king moves, disable castling for that color
+    // If a player's king moves from the starting position, disable castling for them
     if (fromPiece == PieceType::King) {
-        if (turn == White) {
+        if (turn == White && fromSquare == Square::e1) {
             whiteKingCastle = whiteQueenCastle = false;
-        } else {
+        } else if (turn == Black && fromSquare == Square::e8) {
             blackKingCastle = blackQueenCastle = false;
         }
     }
@@ -146,7 +146,7 @@ void Chessboard::push(Move move) {
     CLEAR_BIT(*movingBoard, fromSquare);
     SET_BIT(*movingBoard, toSquare);
 
-    // Erase pieces at capture position
+    // Erase pieces at capture positions
     if (move.isCapture()) {
         Bitboard *captureBoard;
         switch (toPiece) {
@@ -196,15 +196,17 @@ void Chessboard::push(Move move) {
         SET_BIT(*promotionBoard, toSquare); // Set new piece type as present
     }
 
-    // Update boards for all piece types
+    // Update boards for cumulative bitboards
     if (turn == White) {
         CLEAR_BIT(whitePieces, fromSquare);
         SET_BIT(whitePieces, toSquare);
-        CLEAR_BIT(blackPieces, toSquare);
+        if (move.isCapture())
+            CLEAR_BIT(blackPieces, toSquare);
     } else {
         CLEAR_BIT(blackPieces, fromSquare);
         SET_BIT(blackPieces, toSquare);
-        CLEAR_BIT(whitePieces, toSquare);
+        if (move.isCapture())
+            CLEAR_BIT(whitePieces, toSquare);
     }
 }
 
@@ -212,14 +214,37 @@ void Chessboard::push(Move move) {
 void Chessboard::pop() {
     Move lastMove = pastMoves.back();
     pastMoves.pop_back();
+    Square fromSquare = lastMove.getFromSquare(), toSquare = lastMove.getToSquare();
+    PieceType fromPiece = pieceAt(fromSquare);
 
-    // Handle castling
+    // Move the piece back to its original position
+    // To and from squares are inversed from the original order to accomplish this
+    Move undoMove = Move(toSquare, fromSquare, Move::Quiet);
+    this->push(undoMove);
+    pastMoves.pop_back(); // Pop a second time to remove the undo move from history
+
+    // Undo king movement castling right loss
+    // YOU CANT JUST SET COLORS RIGHTS TO TRUE, HAVE TO CHECK FOR LOSS FROM ROOKS SOMEHOW
+    if (fromPiece == PieceType::King) {
+        if (turn == Black && fromSquare == Square::e1) { // Reverse turn condition as it is in reference to the last turn
+            whiteKingCastle = whiteQueenCastle = true;
+        } else if (turn == White && fromSquare == Square::e8) {
+            blackKingCastle = blackQueenCastle = true;
+        }
+    }
+
+    // Undo rook movement castling right loss
+
+    if (fromSquare == Square::h1)
+        whiteKingCastle = true;
+    if (fromSquare == Square::a1)
+        whiteQueenCastle = true;
+    if (fromSquare == Square::h8)
+        blackKingCastle = true;
+    if (fromSquare == Square::a8)
+        blackQueenCastle = true;
 
     // Handle en passant
 
     // Handle promotions
-
-    Move undoMove = Move(lastMove.getToSquare(), lastMove.getFromSquare(), lastMove.getMoveType());
-    this->push(undoMove);
-    pastMoves.pop_back();
 }
