@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "chessboard.h"
 #include "move.h"
 #include "bitboard.h"
@@ -5,6 +6,8 @@
 
 // Declare lookup tables for leaping pieces
 Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAttacks[64];
+// Declare hash tables for sliding pieces
+std::unordered_map<int, Bitboard> bishopAttacks, rookAttacks, queenAttacks;
 
 // Initialize lookup tables
 void initializeAttackTables() {
@@ -23,6 +26,10 @@ void initializeAttackTables() {
         whitePawnAttacks[square] = north(fromSquare);
         blackPawnAttacks[square] = south(fromSquare);
     }
+}
+
+void findMagicNumbers() {
+
 }
 
 // Generate pseudo legal king moves for the current player using the attack maps and checking for castling rights

@@ -30,6 +30,7 @@ Chessboard::Chessboard() {
 
     // Players start out with all castling rights
     whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;
+    whiteQueenCastleBeforeMove = whiteKingCastleBeforeMove = blackQueenCastleBeforeMove = blackKingCastleBeforeMove = true;
 }
 
 // Return the type of piece present at a given square
@@ -60,7 +61,13 @@ void Chessboard::push(Move move) {
     PieceType fromPiece = pieceAt(fromSquare);
     PieceType toPiece = (move.isCapture()) ? pieceAt(toSquare) : PieceType::None;
 
-    // If a player's king moves from the starting position, disable castling for them
+    // Log castling information before move for future popping
+    whiteKingCastleBeforeMove = whiteKingCastle;
+    whiteQueenCastleBeforeMove = whiteQueenCastle;
+    blackKingCastleBeforeMove = blackKingCastle;
+    blackQueenCastleBeforeMove = blackQueenCastle;
+
+    // If a player's king moves from the starting position, disable castling for that player
     if (fromPiece == PieceType::King) {
         if (turn == White && fromSquare == Square::e1) {
             whiteKingCastle = whiteQueenCastle = false;
@@ -79,7 +86,7 @@ void Chessboard::push(Move move) {
     if (fromSquare == Square::a8)
         blackQueenCastle = false;
 
-    // Handle extra rook movement for castling
+    // Handle rook movement for castling
     if (turn == White && moveType == Move::KingCastle) {
         whiteKingCastle = false;
         this->push(Move(Square::h1, Square::f1, Move::Quiet));
@@ -106,19 +113,19 @@ void Chessboard::push(Move move) {
     if (moveType = Move::EnPassant) {
         if (BITBOARD(toSquare) == northeast(BITBOARD(fromSquare))) {
             unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
-            // We know the captured pawn is black since the advancing pawn is moving north
+            // We know the captured pawn's color based on the direction it advances in
             CLEAR_BIT(blackPawns, captureSquare);
         } else if (BITBOARD(toSquare) == northwest(BITBOARD(fromSquare))) {
             unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
             CLEAR_BIT(blackPawns, captureSquare);
         } else if (BITBOARD(toSquare) == southeast(BITBOARD(fromSquare))) {
             unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
-            // We know the captured pawn is white since the advanced pawn is moving south
             CLEAR_BIT(whitePawns, captureSquare);
         } else {
             unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
             CLEAR_BIT(whitePawns, captureSquare);
         }
+        capturedPieces.push_back(PieceType::Pawn);
     }
 
     // Move piece on its board
@@ -151,22 +158,29 @@ void Chessboard::push(Move move) {
         Bitboard *captureBoard;
         switch (toPiece) {
             case PieceType::None:
+                capturedPieces.push_back(PieceType::None);
                 break;
             case PieceType::Pawn:
+                capturedPieces.push_back(PieceType::Pawn);
                 captureBoard = (turn == White) ? &blackPawns : &whitePawns;
             case PieceType::Knight:
+                capturedPieces.push_back(PieceType::Knight);
                 captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
                 break;
             case PieceType::Bishop:
+                capturedPieces.push_back(PieceType::Bishop);
                 captureBoard = (turn == White) ? &blackBishops : &whiteBishops;
                 break;
             case PieceType::Rook:
+                capturedPieces.push_back(PieceType::Rook);
                 captureBoard = (turn == White) ? &blackRooks : &whiteRooks;
                 break;
             case PieceType::Queen:
+                capturedPieces.push_back(PieceType::Queen);
                 captureBoard = (turn == White) ? &blackQueen : &whiteQueen;
                 break;
             case PieceType::King:
+                capturedPieces.push_back(PieceType::King);
                 captureBoard = (turn == White) ? &blackKing : &whiteKing;
                 break;
         }
@@ -178,16 +192,20 @@ void Chessboard::push(Move move) {
     if (move.isPromotion()) {
         Bitboard *promotionBoard;
         switch (moveType) {
-            case Move::KnightPromotion: case Move::KnightPromotionCapture:
+            case Move::KnightPromotion:
+            case Move::KnightPromotionCapture:
                 promotionBoard = (turn == White) ? &whiteKnights : &blackKnights;
                 break;
-            case Move::BishopPromotion: case Move::BishopPromotionCapture:
+            case Move::BishopPromotion:
+            case Move::BishopPromotionCapture:
                 promotionBoard = (turn == White) ? &whiteBishops : &blackBishops;
                 break;
-            case Move::RookPromotion: case Move::RookPromotionCapture:
+            case Move::RookPromotion:
+            case Move::RookPromotionCapture:
                 promotionBoard = (turn == White) ? &whiteRooks : &blackRooks;
                 break;
-            case Move::QueenPromotion: case Move::QueenPromotionCapture:
+            case Move::QueenPromotion:
+            case Move::QueenPromotionCapture:
                 promotionBoard = (turn == White) ? &whiteQueen : &blackQueen;
                 break;
         }
@@ -196,7 +214,7 @@ void Chessboard::push(Move move) {
         SET_BIT(*promotionBoard, toSquare); // Set new piece type as present
     }
 
-    // Update boards for cumulative bitboards
+    // Update cumulative bitboards
     if (turn == White) {
         CLEAR_BIT(whitePieces, fromSquare);
         SET_BIT(whitePieces, toSquare);
@@ -211,40 +229,87 @@ void Chessboard::push(Move move) {
 }
 
 // Take back the last move made
+// Assumes the turn is set to the opponent of the player who made the last move
 void Chessboard::pop() {
     Move lastMove = pastMoves.back();
     pastMoves.pop_back();
     Square fromSquare = lastMove.getFromSquare(), toSquare = lastMove.getToSquare();
     PieceType fromPiece = pieceAt(fromSquare);
 
-    // Move the piece back to its original position
-    // To and from squares are inversed from the original order to accomplish this
-    Move undoMove = Move(toSquare, fromSquare, Move::Quiet);
-    this->push(undoMove);
-    pastMoves.pop_back(); // Pop a second time to remove the undo move from history
-
-    // Undo king movement castling right loss
-    // YOU CANT JUST SET COLORS RIGHTS TO TRUE, HAVE TO CHECK FOR LOSS FROM ROOKS SOMEHOW
-    if (fromPiece == PieceType::King) {
-        if (turn == Black && fromSquare == Square::e1) { // Reverse turn condition as it is in reference to the last turn
-            whiteKingCastle = whiteQueenCastle = true;
-        } else if (turn == White && fromSquare == Square::e8) {
-            blackKingCastle = blackQueenCastle = true;
+    // Undo promotions
+    if (lastMove.isPromotion()) {
+        // Determine piece type of the promoted pawn
+        PieceType promotedPiece;
+        switch (lastMove.getMoveType()) {
+            case Move::KnightPromotion:
+            case Move::KnightPromotionCapture:
+                promotedPiece = PieceType::Knight;
+                break;
+            case Move::BishopPromotion:
+            case Move::BishopPromotionCapture:
+                promotedPiece = PieceType::Bishop;
+                break;
+            case Move::RookPromotion:
+            case Move::RookPromotionCapture:
+                promotedPiece = PieceType::Rook;
+                break;
+            case Move::QueenPromotion:
+            case Move::QueenPromotionCapture:
+                promotedPiece = PieceType::Queen;
+                break;
         }
+
+        // Reset the promoted piece back to a pawn
+        Bitboard *promotionBoard;
+        if (turn == White)
+            promotionBoard = &whitePawns;
+        else
+            promotionBoard = &blackPawns;
+
+        CLEAR_BIT(*promotionBoard, toSquare);
+        SET_BIT(*promotionBoard, fromSquare);
     }
 
-    // Undo rook movement castling right loss
+    // Undo castling right loss
+    whiteKingCastle = whiteKingCastleBeforeMove;
+    whiteQueenCastle = whiteQueenCastleBeforeMove;
+    blackKingCastle = blackKingCastleBeforeMove;
+    blackQueenCastle = blackQueenCastleBeforeMove;
 
-    if (fromSquare == Square::h1)
-        whiteKingCastle = true;
-    if (fromSquare == Square::a1)
-        whiteQueenCastle = true;
-    if (fromSquare == Square::h8)
-        blackKingCastle = true;
-    if (fromSquare == Square::a8)
-        blackQueenCastle = true;
+    // Undo rook movement from castling
+    // REVERSE CONDITIONS, THIS IS FROM PUSH
+    if (turn == White && moveType == Move::KingCastle) {
+        whiteKingCastle = false;
+        this->push(Move(Square::h1, Square::f1, Move::Quiet));
+        this->pop(); // Remove the extra move just logged as castling is recorded as one move
+    } else if (turn == White && moveType == Move::QueenCastle) {
+        whiteQueenCastle = false;
+        this->push(Move(Square::a1, Square::d1, Move::Quiet));
+        this->pop();
+    } else if (turn == Black && moveType == Move::KingCastle) {
+        blackKingCastle == false;
+        this->push(Move(Square::h8, Square::f8, Move::Quiet));
+        this->pop();
+    } else if (turn == Black && moveType == Move::QueenCastle) {
+        blackQueenCastle == false;
+        this->push(Move(Square::a8, Square::d8, Move::Quiet));
+        this->pop();
+    }
 
-    // Handle en passant
+    // Replace captured pieces
+    if (lastMove.isCapture() && lastMove.getMoveType() != Move::EnPassant) {
+        
+    }
 
-    // Handle promotions
+    // Handle pawns captured by en passant
+    if (lastMove.getMoveType() == Move::EnPassant) {
+        Bitboard *enPassantBoard = (turn == White) ? &whitePawns : &blackPawns; // Opposite of player who made the last move, as we are restoring the piece from 2 moves ago
+        SET_BIT(*enPassantBoard, GET_LSB(enPassant));
+        capturedPieces.pop_back();
+    }
+
+    // Move the piece back to its original position
+    Move undoMove = Move(toSquare, fromSquare, Move::Quiet); // To and from squares reversed
+    this->push(undoMove);
+    pastMoves.pop_back(); // Pop a second time to remove the undo move from history
 }

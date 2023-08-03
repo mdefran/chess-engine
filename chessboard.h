@@ -37,6 +37,10 @@ struct Chessboard {
     // Used to track castling rights for each side
     bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
 
+    // Functions to keep track of prior move data for pop function
+    bool whiteQueenCastleBeforeMove, whiteKingCastleBeforeMove, blackQueenCastleBeforeMove, blackKingCastleBeforeMove;
+    std::vector<PieceType> capturedPieces;
+
     // Constructor for the start of the game
     Chessboard();
 
