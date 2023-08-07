@@ -84,6 +84,13 @@ void generateKnightMoves(Chessboard &chessboard) {
     }
 }
 
+void pushPromotionCapture(Chessboard &chessboard, Bitboard fromSquare, Bitboard toSquare) {
+    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotionCapture));
+    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotionCapture));
+    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotionCapture));
+    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotionCapture));
+}
+
 // Generate pseudo legal pawn moves for the current player using the attack maps and manually checking for double advances, captures, and en passant
 void generatePawnMoves(Chessboard &chessboard) {
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whitePawns : chessboard.blackPawns;
@@ -99,9 +106,17 @@ void generatePawnMoves(Chessboard &chessboard) {
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, (fromSquare << 16), Move::DoublePawnPush));
             // Check for diagonal pieces to capture
             if ((northeast(fromSquare) & chessboard.blackPieces) != 0)
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::Capture));
+                // Check for promotion captures
+                if ((north(fromSquare) & RANK_8) != 0)
+                    pushPromotionCapture(chessboard, fromSquare, northeast(fromSquare));
+                else
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::Capture));
             if ((northwest(fromSquare) & chessboard.blackPieces) != 0)
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::Capture));
+                // Check for promotion captures
+                if ((north(fromSquare) & RANK_8) != 0)
+                    pushPromotionCapture(chessboard, fromSquare, northwest(fromSquare));
+                else
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::Capture));
             // Check for en passant
             if (chessboard.enPassant == east(fromSquare))
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::EnPassant));
@@ -113,9 +128,17 @@ void generatePawnMoves(Chessboard &chessboard) {
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, (fromSquare >> 16), Move::DoublePawnPush));
             // Check for diagonal pieces to capture
             if ((southeast(fromSquare) & chessboard.whitePieces) != 0)
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::Capture));
+                // Check for promotion captures
+                if ((south(fromSquare) & RANK_1) != 0)
+                    pushPromotionCapture(chessboard, fromSquare, southeast(fromSquare));
+                else
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::Capture));
             if ((southwest(fromSquare) & chessboard.whitePieces) != 0)
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::Capture));
+                // Check for promotion captures
+                if ((south(fromSquare) & RANK_1) != 0)
+                    pushPromotionCapture(chessboard, fromSquare, southwest(fromSquare));
+                else
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::Capture));
             // Check for en passant
             if (chessboard.enPassant == east(fromSquare))
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::EnPassant));
@@ -126,7 +149,16 @@ void generatePawnMoves(Chessboard &chessboard) {
         // Add normal advances
         while (toSquares != 0) {
             unsigned short toSquare = POP_LSB(toSquares);
-            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
+
+            // Add normal promotions
+            if ((toSquare & RANK_8 != 0) || (toSquare & RANK_1 != 0)) {
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotion));
+            } else {
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
+            }
         }
     }
 }
