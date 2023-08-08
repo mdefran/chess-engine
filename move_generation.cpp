@@ -11,31 +11,14 @@ Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAtta
 std::unordered_map<int, Bitboard> bishopAttacks, rookAttacks;
 Bitboard rookMasks[64], bishopMasks[64];
 
-const int rookRelevantBits[64] {
-    12, 11, 11, 11, 11, 11, 11, 12, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    11, 10, 10, 10, 10, 10, 10, 11, 
-    12, 11, 11, 11, 11, 11, 11, 12
-};
-const int bishopRelevantBits[64] {
-    6, 5, 5, 5, 5, 5, 5, 6, 
-    5, 5, 5, 5, 5, 5, 5, 5, 
-    5, 5, 7, 7, 7, 7, 5, 5, 
-    5, 5, 7, 9, 9, 7, 5, 5, 
-    5, 5, 7, 9, 9, 7, 5, 5, 
-    5, 5, 7, 7, 7, 7, 5, 5, 
-    5, 5, 5, 5, 5, 5, 5, 5, 
-    6, 5, 5, 5, 5, 5, 5, 6
-};
-
 // Initialize lookup tables
 void initializeAttackTables() {
+    // Loop through each square individually
     for (int square = 0; square < 64; square++) {
+        // Get square information
         Bitboard fromSquare = BITBOARD(square);
+        int rank = square / 8;
+        int file = square % 8; // Reversed from traditional chess files due to endianness of squares
 
         kingAttacks[square] = north(fromSquare) | northeast(fromSquare) | east(fromSquare) | 
                               southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
@@ -49,13 +32,19 @@ void initializeAttackTables() {
         whitePawnAttacks[square] = north(fromSquare);
         blackPawnAttacks[square] = south(fromSquare);
 
+        // Generate relevant occupancy bits for rooks, excluding boundary ranks and files
         rookMasks[square] = 0ULL;
-        for (int bit = square / 8; bit < 7; bit++) rookMasks[square] |= fromSquare << (bit * 8); // North
-        for (int bit = square / 8; bit > 1; bit--) rookMasks[square] |= fromSquare >> (bit * 8); // South
-        for (int bit = square % 8; bit > 1; bit--) rookMasks[square] |= fromSquare >> bit; // East
-        for (int bit = square % 8; bit < 7; bit++) rookMasks[square] |= fromSquare << bit; // West
+        for (int r = rank + 1; r < 7; r++) rookMasks[square] |= BITBOARD(r * 8 + file); // North
+        for (int r = rank - 1; r > 0; r--) rookMasks[square] |= BITBOARD(r * 8 + file); // South
+        for (int f = file - 1; f > 0; f--) rookMasks[square] |= BITBOARD(rank * 8 + f); // East
+        for (int f = file + 1; f < 7; f++) rookMasks[square] |= BITBOARD(rank * 8 + f); // West
 
+        // Generate relevant occupancy bits for bishops, excluding boundary ranks and files
         bishopMasks[square] = 0ULL;
+        for (int r = rank + 1, f = file - 1; r < 7 && f > 0; r++, f--) bishopMasks[square] |= BITBOARD(r * 8 + f); // Northeast
+        for (int r = rank - 1, f = file - 1; r > 0 && f > 0; r--, f--) bishopMasks[square] |= BITBOARD(r * 8 + f); // Southeast
+        for (int r = rank - 1, f = file + 1; r > 0 && f < 7; r--, f++) bishopMasks[square] |= BITBOARD(r * 8 + f); // Southwest
+        for (int r = rank + 1, f = file + 1; r < 7 && f < 7; r++, f++) bishopMasks[square] |= BITBOARD(r * 8 + f); // Northwest
     }
 }
 
@@ -208,6 +197,7 @@ void generatePawnMoves(Chessboard &chessboard) {
     }
 }
 
+/*
 void generateRookAttacks(Chessboard &chessboard) {
 
 }
@@ -224,3 +214,4 @@ MoveList Chessboard::generatePseudoLegalMoves() {
 MoveList Chessboard::generateLegalMoves() {
     MoveList pseudoLegalMoves = generatePseudoLegalMoves();
 }
+*/
