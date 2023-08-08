@@ -11,8 +11,8 @@ It is better to precalculate all possible moves of a bishop or rook at a given s
 However, using a 64-bit integer as an index would provide to be far too large for memory.
 Instead, we use a perfect hashing function called "magic bitboards."
 
-The below magic numbers were pre-calculated by the maintainer of the Chess Programming website.
-Magic numbers can be calculated through random trial-and-error quickly, even when using inefficient code.
+The below magic numbers were precalculated by the maintainer of the Chess Programming website.
+Magic numbers can be calculated through random trial and error quickly, even when using inefficient code.
 More information about the hashing technique can be found here:
 https://www.chessprogramming.org/Magic_Bitboards
 NOTE: The endianness of the engine implemented on the wikipedia varies from the implementation in this program; however, this is irrelevant, as magic numbers are endianless.
