@@ -3,11 +3,34 @@
 #include "move.h"
 #include "bitboard.h"
 #include "types.h"
+#include "magic_bitboards.h"
 
 // Declare lookup tables for leaping pieces
 Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAttacks[64];
-// Declare hash tables for sliding pieces
-std::unordered_map<int, Bitboard> bishopAttacks, rookAttacks, queenAttacks;
+// Declare lookup tables for sliding pieces
+std::unordered_map<int, Bitboard> bishopAttacks, rookAttacks;
+Bitboard rookMasks[64], bishopMasks[64];
+
+const int rookRelevantBits[64] {
+    12, 11, 11, 11, 11, 11, 11, 12, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    12, 11, 11, 11, 11, 11, 11, 12
+};
+const int bishopRelevantBits[64] {
+    6, 5, 5, 5, 5, 5, 5, 6, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    5, 5, 7, 7, 7, 7, 5, 5, 
+    5, 5, 7, 9, 9, 7, 5, 5, 
+    5, 5, 7, 9, 9, 7, 5, 5, 
+    5, 5, 7, 7, 7, 7, 5, 5, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    6, 5, 5, 5, 5, 5, 5, 6
+};
 
 // Initialize lookup tables
 void initializeAttackTables() {
@@ -15,8 +38,8 @@ void initializeAttackTables() {
         Bitboard fromSquare = BITBOARD(square);
 
         kingAttacks[square] = north(fromSquare) | northeast(fromSquare) | east(fromSquare) | 
-                                southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
-                                west(fromSquare) | northwest(fromSquare);
+                              southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
+                              west(fromSquare) | northwest(fromSquare);
 
         knightAttacks[square] = (((fromSquare & ~(FILE_G | FILE_H | RANK_8)) << 6) | ((fromSquare & ~(FILE_G | FILE_H | RANK_1)) >> 10)) |
                                 (((fromSquare & ~(FILE_H | RANK_7 | RANK_8)) << 15) | ((fromSquare & ~(FILE_H | RANK_1 | RANK_2)) >> 17)) |
@@ -25,11 +48,15 @@ void initializeAttackTables() {
 
         whitePawnAttacks[square] = north(fromSquare);
         blackPawnAttacks[square] = south(fromSquare);
+
+        rookMasks[square] = 0ULL;
+        for (int bit = square / 8; bit < 7; bit++) rookMasks[square] |= fromSquare << (bit * 8); // North
+        for (int bit = square / 8; bit > 1; bit--) rookMasks[square] |= fromSquare >> (bit * 8); // South
+        for (int bit = square % 8; bit > 1; bit--) rookMasks[square] |= fromSquare >> bit; // East
+        for (int bit = square % 8; bit < 7; bit++) rookMasks[square] |= fromSquare << bit; // West
+
+        bishopMasks[square] = 0ULL;
     }
-}
-
-void findMagicNumbers() {
-
 }
 
 // Generate pseudo legal king moves for the current player using the attack maps and checking for castling rights
@@ -63,8 +90,10 @@ void generateKingMoves(Chessboard &chessboard) {
     // Add normal moves
     while (toSquares != 0) {
         unsigned short toSquare = POP_LSB(toSquares);
+        // Check if the move is a capture or not
         Move::MoveType type = (toSquare & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquareIndex, toSquare, type));
+        if (toSquare & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+            chessboard.pseudoLegalMoves.push_back(Move(fromSquareIndex, toSquare, type));
     }
 }
 
@@ -78,8 +107,11 @@ void generateKnightMoves(Chessboard &chessboard) {
         Move move;
         while (toSquares != 0) {
             unsigned short toSquare = POP_LSB(toSquares);
+            // Check if the move is a capture or not
             Move::MoveType type = (toSquare & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
-            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, type));
+            // Destination square should not be occupied by ally piece
+            if (toSquare & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, type));
         }
     }
 }
@@ -119,9 +151,13 @@ void generatePawnMoves(Chessboard &chessboard) {
                     chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::Capture));
             // Check for en passant
             if (chessboard.enPassant == east(fromSquare))
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::EnPassant));
+                // Destination square should not be occupied by ally piece
+                if (northeast(fromSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northeast(fromSquare), Move::EnPassant));
             if (chessboard.enPassant == west(fromSquare))
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::EnPassant));
+                // Destination square should not be occupied by ally piece
+                if (northwest(fromSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, northwest(fromSquare), Move::EnPassant));
         } else {
             // Check for initial double advance conditions
             if ((fromSquare & RANK_7) != 0 && (((fromSquare >> 8) | (fromSquare >> 16)) & chessboard.allPieces) == 0)
@@ -141,9 +177,13 @@ void generatePawnMoves(Chessboard &chessboard) {
                     chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::Capture));
             // Check for en passant
             if (chessboard.enPassant == east(fromSquare))
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::EnPassant));
+                // Destination square should not be occupied by ally piece
+                if (southeast(fromSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southeast(fromSquare), Move::EnPassant));
             if (chessboard.enPassant == west(fromSquare))
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::EnPassant));
+                // Destination square should not be occupied by ally piece
+                if (southwest(fromSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, southwest(fromSquare), Move::EnPassant));
         }
 
         // Add normal advances
@@ -152,18 +192,29 @@ void generatePawnMoves(Chessboard &chessboard) {
 
             // Add normal promotions
             if ((toSquare & RANK_8 != 0) || (toSquare & RANK_1 != 0)) {
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotion));
+                // Destination square should not be occupied by ally piece
+                if (toSquare & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0) {
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotion));
+                }
             } else {
-                chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
+                // Destination square should not be occupied by ally piece
+                if (toSquare & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+                    chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::Quiet));
             }
         }
     }
 }
 
+void generateRookAttacks(Chessboard &chessboard) {
 
+}
+
+void generateBishopAttacks(Chessboard &chessboard) {
+
+}
 
 // Change move generation functions to take parameter of movelist to append to and have this generate a movelist from that
 MoveList Chessboard::generatePseudoLegalMoves() {
