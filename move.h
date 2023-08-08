@@ -11,8 +11,8 @@ private:
     /*
     Each move is encoded into a 16-bit variable.
     Starting from the rightmost bit:
-    Bits 0-5 represent the square index of the origin square, 0-63.
-    Bits 6-11 represent the square index of the destination square, 0-63.
+    Bits 0-5 represent the index of the origin square, 0-63.
+    Bits 6-11 represent the index of the destination square, 0-63.
     The remaining bits, 12-15, are used to indicate the type of the move.
     */
     uint16_t move;
@@ -20,8 +20,8 @@ private:
 public:
     /*
     The 4 most significant bits represent the move type.
-    Starting from the rightmost bit:
-    Bits 0-1 are used purely to differentiate between the types.
+    Starting from the rightmost of those bits:
+    Bits 0-1 are used purely to differentiate between the types and have no other meanings.
     Bit 2 indicates whether or not the move is a promotion.
     Bit 3 indicates whether or not the move is a capture.
     */
@@ -42,18 +42,22 @@ public:
         QueenPromotionCapture = 15 // 0b1111
     };
 
+    // Constructors
     Move();
     Move(Square fromSquare, Square toSquare, MoveType moveType);
     Move(Bitboard fromSquare, Bitboard toSquare, MoveType moveType);
 
+    // Getter functions
     Square getFromSquare();
     Square getToSquare();
     MoveType getMoveType();
     bool isQuiet();
     bool isCapture();
     bool isPromotion();
-    void printMove();
     bool isNull();
+
+    // Display functions
+    void printMove();
 };
 
 typedef std::vector<Move> MoveList;
