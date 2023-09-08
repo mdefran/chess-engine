@@ -1,5 +1,5 @@
-#ifndef BOARD_VISUALIZATION_h
-#define BOARD_VISUALIZATION_h
+#ifndef BOARD_VISUALIZATION_H
+#define BOARD_VISUALIZATION_H
 
 #include <iostream>
 #include "bitboard.h"
@@ -8,4 +8,4 @@
 void printBitboard(Bitboard bitboard);
 void printChessboard(Chessboard &chessboard);
 
-#endif // BOARD_VISUALIZATION_h
+#endif // BOARD_VISUALIZATION_H

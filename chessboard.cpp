@@ -226,21 +226,31 @@ void Chessboard::push(Move move) {
         if (move.isCapture())
             CLEAR_BIT(whitePieces, toSquare);
     }
+    allPieces = whitePieces | blackPieces;
+
+    // Transfer control of the board to the opponent
+    turn = (turn == White) ? Black : White;
 }
 
 // Take back the last move made
-// Assumes the turn is set to the opponent of the player who made the last move
 void Chessboard::pop() {
+    // Get information about the last move
     Move lastMove = pastMoves.back();
-    pastMoves.pop_back();
     Square fromSquare = lastMove.getFromSquare(), toSquare = lastMove.getToSquare();
     PieceType fromPiece = pieceAt(fromSquare);
+    Move::MoveType moveType = lastMove.getMoveType();
+
+    // Delete the move from history
+    pastMoves.pop_back();
+
+    // Transfer control of the board back to the player who made the move being popped
+    turn = (turn == White) ? Black : White;
 
     // Undo promotions
     if (lastMove.isPromotion()) {
         // Determine piece type of the promoted pawn
         PieceType promotedPiece;
-        switch (lastMove.getMoveType()) {
+        switch (moveType) {
             case Move::KnightPromotion:
             case Move::KnightPromotionCapture:
                 promotedPiece = PieceType::Knight;
@@ -261,10 +271,20 @@ void Chessboard::pop() {
 
         // Reset the promoted piece back to a pawn
         Bitboard *promotionBoard;
-        if (turn == White)
-            promotionBoard = &whitePawns;
-        else
-            promotionBoard = &blackPawns;
+        switch (promotedPiece) {
+            case PieceType::Knight:
+                promotionBoard = (turn == White) ? &whiteKnights : &blackKnights;
+                break;
+            case PieceType::Bishop:
+                promotionBoard = (turn == White) ? &whiteBishops : &blackBishops;
+                break;
+            case PieceType::Rook:
+                promotionBoard = (turn == White) ? &whiteRooks : &blackRooks;
+                break;
+            case PieceType::Queen:
+                promotionBoard = (turn == White) ? &whiteQueen : &blackQueen;
+                break;
+        }
 
         CLEAR_BIT(*promotionBoard, toSquare);
         SET_BIT(*promotionBoard, fromSquare);
@@ -297,12 +317,12 @@ void Chessboard::pop() {
     }
 
     // Replace captured pieces
-    if (lastMove.isCapture() && lastMove.getMoveType() != Move::EnPassant) {
+    if (lastMove.isCapture() && moveType != Move::EnPassant) {
         
     }
 
     // Handle pawns captured by en passant
-    if (lastMove.getMoveType() == Move::EnPassant) {
+    if (moveType == Move::EnPassant) {
         Bitboard *enPassantBoard = (turn == White) ? &whitePawns : &blackPawns; // Opposite of player who made the last move, as we are restoring the piece from 2 moves ago
         SET_BIT(*enPassantBoard, GET_LSB(enPassant));
         capturedPieces.pop_back();

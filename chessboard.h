@@ -37,7 +37,7 @@ struct Chessboard {
     // Used to track castling rights for each side
     bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
 
-    // Functions to keep track of prior move data for pop function
+    // Functions to keep track of the previous move's data for the pop function
     bool whiteQueenCastleBeforeMove, whiteKingCastleBeforeMove, blackQueenCastleBeforeMove, blackKingCastleBeforeMove;
     std::vector<PieceType> capturedPieces;
 
@@ -45,8 +45,10 @@ struct Chessboard {
     Chessboard();
 
     // Move generation
-    MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
+    // MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
     MoveList generateLegalMoves(); // Generate only validated pseudo legal moves
+    // TEMPORARY MOVE GEN
+    void generatePseudoLegalMoves();
 
     // Square info
     PieceType pieceAt(unsigned short square);

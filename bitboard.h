@@ -53,6 +53,14 @@ inline int POP_LSB(Bitboard &bitboard) {
     bitboard &= bitboard - 1;
     return index;
 }
+inline int COUNT_BITS(Bitboard bitboard) {
+    int bits = 0;
+    while (bitboard != 0) {
+        POP_LSB(bitboard);
+        bits++;
+    }
+    return bits;
+}
 #define BITBOARD(square) ((1ULL << square))
 
 // Directional helper functions with boundary validation

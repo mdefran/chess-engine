@@ -2,7 +2,7 @@
 #include "bitboard.h"
 #include <iostream>
 
-// Constructors for null, squares, and bitboards
+// Constructors
 Move::Move() {this->move = 0; } // Represents the null move, quiet and does not change board state
 Move::Move(Square fromSquare, Square toSquare, MoveType moveType) { this->move = (moveType << 12) | (static_cast<unsigned short>(toSquare << 6)) | (static_cast<unsigned short>(fromSquare)); }
 Move::Move(Bitboard fromSquare, Bitboard toSquare, MoveType moveType) { this->move = (moveType << 12) | (GET_LSB(toSquare << 6)) | (GET_LSB(fromSquare)); }
@@ -17,4 +17,4 @@ bool Move::isPromotion() { return static_cast<bool>(this->move & (1 << 14) != 0)
 bool Move::isNull() { return !(this->move); }
 
 // Display functions
-void Move::printMove() { std::cout << this->getFromSquare() << " " << this->getToSquare() << std::endl; }
+void Move::printMove() { std::cout << squareNames[this->getFromSquare()] << " " << squareNames[this->getToSquare()] << std::endl; }
