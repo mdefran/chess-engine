@@ -3,48 +3,12 @@
 #include "move.h"
 #include "bitboard.h"
 #include "types.h"
-#include "magic_bitboards.h"
+#include "board_visualization.h"
 
 // Declare lookup tables for leaping pieces
 Bitboard knightAttacks[64], kingAttacks[64], whitePawnAttacks[64], blackPawnAttacks[64];
 // Declare sliding piece run-time attack boards
 Bitboard rookAttacks, bishopAttacks;
-
-// MAGIC BITBOARDS CODE
-
-/*
-// Declare lookup tables for sliding pieces
-std::unordered_map<int, Bitboard> bishopAttacks, rookAttacks;
-Bitboard rookMasks[64], bishopMasks[64];
-
-
-int getMagicKey(Bitboard blockers, int square, PieceType pieceType) {
-    // Get magic number
-    Bitboard magicBitboard = 0ULL;
-    if (pieceType == PieceType::Rook)
-        magicBitboard = rookMagics[square];
-    if (pieceType == PieceType::Bishop)
-        magicBitboard = bishopMagics[square];
-    
-    return (blockers * magicBitboard) >>
-}
-
-// Blocker generation function for filling in sliding piece attack tables
-Bitboard generateBlockers(Bitboard mask, int blockerVariation) {
-    Bitboard blockers = 0ULL;
-    unsigned short square = 0;
-
-    while (mask) {
-        if (blockerVariation & BITBOARD(square)) {
-            blockers |= (mask & BITBOARD(square));
-        }
-        mask >>= 1;
-        square++;
-    }
-
-    return blockers;
-}
-*/
 
 void initializeLookupTables() {
     // Loop through each square individually
@@ -54,42 +18,20 @@ void initializeLookupTables() {
         int rank = square / 8;
         int file = square % 8; // Reversed from traditional chess files due to endianness of squares
 
+        // Kings can attack in any adjacent square
         kingAttacks[square] = north(fromSquare) | northeast(fromSquare) | east(fromSquare) | 
                               southeast(fromSquare) | south(fromSquare) | southwest(fromSquare) |
                               west(fromSquare) | northwest(fromSquare);
 
+        // Knights can attack in an L shape
         knightAttacks[square] = (((fromSquare & ~(FILE_G | FILE_H | RANK_8)) << 6) | ((fromSquare & ~(FILE_G | FILE_H | RANK_1)) >> 10)) |
                                 (((fromSquare & ~(FILE_H | RANK_7 | RANK_8)) << 15) | ((fromSquare & ~(FILE_H | RANK_1 | RANK_2)) >> 17)) |
                                 (((fromSquare & ~(FILE_A | RANK_7 | RANK_8)) << 17) | ((fromSquare & ~(FILE_A | RANK_1 | RANK_2)) >> 15)) |
                                 (((fromSquare & ~(FILE_A | FILE_B | RANK_8)) << 10) | ((fromSquare & ~(FILE_A | FILE_B | RANK_1)) >> 6));
 
+        // Pawns can advance forward (captures and special moves handled in generation)
         whitePawnAttacks[square] = north(fromSquare);
         blackPawnAttacks[square] = south(fromSquare);
-
-        // MAGIC BITBOARDS CODE
-
-        /*
-        // Generate generic ray masks for rooks, excluding boundary ranks and files
-        rookMasks[square] = 0ULL;
-        for (int r = rank + 1; r < 7; r++) rookMasks[square] |= BITBOARD(r * 8 + file); // North
-        for (int r = rank - 1; r > 0; r--) rookMasks[square] |= BITBOARD(r * 8 + file); // South
-        for (int f = file - 1; f > 0; f--) rookMasks[square] |= BITBOARD(rank * 8 + f); // East
-        for (int f = file + 1; f < 7; f++) rookMasks[square] |= BITBOARD(rank * 8 + f); // West
-
-        // Consider all possible blockers within the masks
-        int blockerVariations = 1 << COUNT_BITS(rookMasks[square]); // 2^(relevant bits) calculates the number of combinations of blockers
-        for (int variation = 0; variation < blockerVariations; variation++) {
-            Bitboard blockers = generateBlockers(rookMasks[square], variation);
-
-        }
-
-        // Generate generic ray masks for bishops, excluding boundary ranks and files
-        bishopMasks[square] = 0ULL;
-        for (int r = rank + 1, f = file - 1; r < 7 && f > 0; r++, f--) bishopMasks[square] |= BITBOARD(r * 8 + f); // Northeast
-        for (int r = rank - 1, f = file - 1; r > 0 && f > 0; r--, f--) bishopMasks[square] |= BITBOARD(r * 8 + f); // Southeast
-        for (int r = rank - 1, f = file + 1; r > 0 && f < 7; r--, f++) bishopMasks[square] |= BITBOARD(r * 8 + f); // Southwest
-        for (int r = rank + 1, f = file + 1; r < 7 && f < 7; r++, f++) bishopMasks[square] |= BITBOARD(r * 8 + f); // Northwest
-        */
     }
 }
 
@@ -135,16 +77,16 @@ void generateKingMoves(Chessboard &chessboard) {
 void generateKnightMoves(Chessboard &chessboard) {
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteKnights : chessboard.blackKnights;
     while (fromSquares != 0) {
-        unsigned short fromSquare = POP_LSB(fromSquares);
+        Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
         Bitboard toSquares = knightAttacks[fromSquare];
 
         Move move;
         while (toSquares != 0) {
-            unsigned short toSquare = POP_LSB(toSquares);
+            Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             // Check if the move is a capture or not
             Move::MoveType type = (toSquare & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
-            // Destination square should not be occupied by ally piece
-            if (toSquare & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces) == 0)
+            // Destination square should not be occupied by ally piece        
+            if ((BITBOARD(toSquare) & chessboard.whitePieces) == 0ULL)
                 chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, type));
         }
     }
@@ -335,9 +277,14 @@ MoveList Chessboard::generateLegalMoves() {
 
 int main () {
     Chessboard chessboard;
-    generatePawnMoves(chessboard);
-
-    for (Move move : chessboard.pseudoLegalMoves) {
+    initializeLookupTables();
+    generateKnightMoves(chessboard);
+    
+    while (!chessboard.pseudoLegalMoves.empty()) {
+        Move move = chessboard.pseudoLegalMoves.back();
         move.printMove();
+        chessboard.pseudoLegalMoves.pop_back();
     }
+
+    return 0;
 }
