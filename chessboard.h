@@ -51,8 +51,8 @@ struct Chessboard {
     void generatePseudoLegalMoves();
 
     // Square info
-    PieceType pieceAt(unsigned short square);
-    bool underAttack(unsigned short square);
+    PieceType pieceAt(Square square);
+    bool underAttack(Square square);
 
     // Board manipulation
     void push(Move move); // Play a move to the board

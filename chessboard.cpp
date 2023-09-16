@@ -34,7 +34,7 @@ Chessboard::Chessboard() {
 }
 
 // Return the type of piece present at a given square
-PieceType Chessboard::pieceAt(unsigned short square) {
+PieceType Chessboard::pieceAt(Square square) {
     if (GET_BIT(whitePawns, square) != 0 || GET_BIT(blackPawns, square) != 0) {
         return PieceType::Pawn;
     } else if (GET_BIT(whiteKnights, square) != 0 || GET_BIT(blackKnights, square) != 0) {
