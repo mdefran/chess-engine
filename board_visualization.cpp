@@ -23,29 +23,29 @@ void printChessboard(Chessboard &chessboard) {
             Bitboard mask = BITBOARD(square);
             // Find the piece on the square and print it
             if (chessboard.whitePawns & mask)
-                std::cout << "♙ ";
+                std::cout << "P ";
             else if (chessboard.whiteKnights & mask)
-                std::cout << "♘ ";
+                std::cout << "N ";
             else if (chessboard.whiteBishops & mask)
-                std::cout << "♗ ";
+                std::cout << "B ";
             else if (chessboard.whiteRooks & mask)
-                std::cout << "♖ ";
+                std::cout << "R ";
             else if (chessboard.whiteQueen & mask)
-                std::cout << "♕ ";
+                std::cout << "Q ";
             else if (chessboard.whiteKing & mask)
-                std::cout << "♔ ";
+                std::cout << "K ";
             else if (chessboard.blackPawns & mask)
-                std::cout << "♟︎ ";
+                std::cout << "p ";
             else if (chessboard.blackKnights & mask)
-                std::cout << "♞ ";
+                std::cout << "n ";
             else if (chessboard.blackBishops & mask)
-                std::cout << "♝ ";
+                std::cout << "b ";
             else if (chessboard.blackRooks & mask)
-                std::cout << "♜ ";
+                std::cout << "r ";
             else if (chessboard.blackQueen & mask)
-                std::cout << "♛ ";
+                std::cout << "q ";
             else if (chessboard.blackKing & mask)
-                std::cout << "♚ ";
+                std::cout << "k ";
             else
                 std::cout << ". ";
         }

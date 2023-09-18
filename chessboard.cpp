@@ -31,6 +31,9 @@ Chessboard::Chessboard() {
     // Players start out with all castling rights
     whiteQueenCastle = whiteKingCastle = blackQueenCastle = blackKingCastle = true;
     whiteQueenCastleBeforeMove = whiteKingCastleBeforeMove = blackQueenCastleBeforeMove = blackKingCastleBeforeMove = true;
+
+    // Set attack table values
+    this->initializeLookupTables();
 }
 
 // Return the type of piece present at a given square
@@ -52,10 +55,17 @@ PieceType Chessboard::pieceAt(Square square) {
     }
 }
 
+// Pass board control to the opponent
+void Chessboard::passTurn() {
+    turn = (turn == White) ? Black : White;
+}
+
 // Push a move onto the board
 void Chessboard::push(Move move) {
-    // Gather move information
+    // Push the move to history
     pastMoves.push_back(move);
+
+    // Get move information
     Square fromSquare = move.getFromSquare(), toSquare = move.getToSquare();
     Move::MoveType moveType = move.getMoveType();
     PieceType fromPiece = pieceAt(fromSquare);
@@ -69,11 +79,10 @@ void Chessboard::push(Move move) {
 
     // If a player's king moves from the starting position, disable castling for that player
     if (fromPiece == PieceType::King) {
-        if (turn == White && fromSquare == Square::e1) {
+        if (turn == White && fromSquare == Square::e1)
             whiteKingCastle = whiteQueenCastle = false;
-        } else if (turn == Black && fromSquare == Square::e8) {
+        else if (turn == Black && fromSquare == Square::e8)
             blackKingCastle = blackQueenCastle = false;
-        }
     }
 
     // If a rook moves, disable castling for that corner
@@ -88,19 +97,19 @@ void Chessboard::push(Move move) {
 
     // Handle rook movement for castling
     if (turn == White && moveType == Move::KingCastle) {
-        whiteKingCastle = false;
+        whiteKingCastle = whiteQueenCastle = false;
         this->push(Move(Square::h1, Square::f1, Move::Quiet));
         this->pop(); // Remove the extra move just logged as castling is recorded as one move
     } else if (turn == White && moveType == Move::QueenCastle) {
-        whiteQueenCastle = false;
+        whiteKingCastle = whiteQueenCastle = false;
         this->push(Move(Square::a1, Square::d1, Move::Quiet));
         this->pop();
     } else if (turn == Black && moveType == Move::KingCastle) {
-        blackKingCastle == false;
+        blackKingCastle = blackQueenCastle = false;
         this->push(Move(Square::h8, Square::f8, Move::Quiet));
         this->pop();
     } else if (turn == Black && moveType == Move::QueenCastle) {
-        blackQueenCastle == false;
+        blackKingCastle = blackQueenCastle = false;
         this->push(Move(Square::a8, Square::d8, Move::Quiet));
         this->pop();
     }
@@ -110,19 +119,12 @@ void Chessboard::push(Move move) {
         enPassant = move.getToSquare();
 
     // Perform en passant pawn capture
-    if (moveType = Move::EnPassant) {
-        if (BITBOARD(toSquare) == northeast(BITBOARD(fromSquare))) {
-            unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
-            // We know the captured pawn's color based on the direction it advances in
-            CLEAR_BIT(blackPawns, captureSquare);
-        } else if (BITBOARD(toSquare) == northwest(BITBOARD(fromSquare))) {
-            unsigned short captureSquare = GET_LSB(south(BITBOARD(toSquare)));
-            CLEAR_BIT(blackPawns, captureSquare);
-        } else if (BITBOARD(toSquare) == southeast(BITBOARD(fromSquare))) {
-            unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
-            CLEAR_BIT(whitePawns, captureSquare);
-        } else {
-            unsigned short captureSquare = GET_LSB(north(BITBOARD(toSquare)));
+    if (moveType == Move::EnPassant) {
+        if (BITBOARD(toSquare) == northeast(BITBOARD(fromSquare)) || BITBOARD(toSquare) == northwest(BITBOARD(fromSquare))) {
+            Square captureSquare = static_cast<Square>(GET_LSB(south(BITBOARD(toSquare))));
+            CLEAR_BIT(blackPawns, captureSquare); // We know the captured pawn's color based on the direction it advances in
+        } else if (BITBOARD(toSquare) == southeast(BITBOARD(fromSquare)) || BITBOARD(toSquare) == southwest(BITBOARD(fromSquare))) {
+            Square captureSquare = static_cast<Square>(GET_LSB(north(BITBOARD(toSquare))));
             CLEAR_BIT(whitePawns, captureSquare);
         }
         capturedPieces.push_back(PieceType::Pawn);
@@ -150,6 +152,7 @@ void Chessboard::push(Move move) {
             movingBoard = (turn == White) ? &whiteKing : &blackKing;
             break;
     }
+
     CLEAR_BIT(*movingBoard, fromSquare);
     SET_BIT(*movingBoard, toSquare);
 
@@ -158,6 +161,7 @@ void Chessboard::push(Move move) {
         Bitboard *captureBoard;
         switch (toPiece) {
             case PieceType::None:
+                // Keep captured pieces in sync with move history
                 capturedPieces.push_back(PieceType::None);
                 break;
             case PieceType::Pawn:
@@ -185,6 +189,7 @@ void Chessboard::push(Move move) {
                 break;
         }
 
+        // Clear the piece and add it to captured piece history
         CLEAR_BIT(*captureBoard, toSquare);
     }
 
@@ -229,7 +234,7 @@ void Chessboard::push(Move move) {
     allPieces = whitePieces | blackPieces;
 
     // Transfer control of the board to the opponent
-    turn = (turn == White) ? Black : White;
+    this->passTurn();
 }
 
 // Take back the last move made

@@ -2,14 +2,13 @@
 #include "move.h"
 #include "bitboard.h"
 #include "types.h"
-#include "board_visualization.h"
 
 // Declare lookup tables for leaping pieces
 Bitboard knightAttacks[64], kingAttacks[64], whitePawnAdvances[64], blackPawnAdvances[64], whitePawnCaptures[64], blackPawnCaptures[64];
 // Declare sliding piece run-time attack boards
 Bitboard rookAttacks, bishopAttacks;
 
-void initializeLookupTables() {
+void Chessboard::initializeLookupTables() {
     // Loop through each square individually
     for (int square = 0; square < 64; square++) {
         // Get square information
@@ -410,14 +409,14 @@ MoveList Chessboard::generateLegalMoves() {
         this->push(pseudoLegalMove);
 
         // Generate opponent's responses
-        this->turn = (this->turn == White) ? Black : White;
+        this->passTurn();
         MoveList enemyMoves = this->generatePseudoLegalMoves();
-        this->turn = (this->turn == White) ? Black : White;
+        this->passTurn();
 
         // Iterate through responses
         for (int j = 0; j < enemyMoves.size(); j++) {
             Move enemyMove = enemyMoves[j];
-            // If the move puts the king in check, do not push it
+            // If the move puts the current player's king in check, it is not legal
             if (enemyMove.isCapture() && (BITBOARD(enemyMove.getToSquare()) == ((this->turn == White) ? this->whiteKing : this->blackKing)))
                 legal = false;
         }
@@ -431,22 +430,4 @@ MoveList Chessboard::generateLegalMoves() {
     }
 
     return legalMoves;
-}
-
-int main () {
-    Chessboard chessboard;
-    initializeLookupTables();
-    MoveList legalMoves = chessboard.generatePseudoLegalMoves();
-
-    while (!legalMoves.empty()) {
-        Move move = legalMoves.back();
-        move.printMove();
-        printBitboard(BITBOARD(move.getFromSquare()));
-        printf("\n");
-        printBitboard(BITBOARD(move.getToSquare()));
-        printf("\n");
-        legalMoves.pop_back();
-    }
-
-    return 0;
 }

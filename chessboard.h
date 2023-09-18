@@ -49,6 +49,8 @@ struct Chessboard {
     MoveList generateLegalMoves();
     // Generate possible moves not considering check, ally piece placement, etc
     MoveList generatePseudoLegalMoves();
+    // Generate initial values for attack tables
+    void initializeLookupTables();
 
     // Square info
     // Returns the piece type at a given square
@@ -61,6 +63,8 @@ struct Chessboard {
     void push(Move move);
     // Undo the last move made
     void pop();
+    // Give control of the board to the opponent
+    void passTurn();
 
     // Endgame detection
     bool isCheck();
