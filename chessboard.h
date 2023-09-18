@@ -28,8 +28,8 @@ struct Chessboard {
     // Active player
     Color turn;
 
-    // Move lists for move generation and tracking
-    MoveList pseudoLegalMoves, legalMoves, pastMoves;
+    // Tracks moves made so far
+    MoveList pastMoves;
 
     // Variable to store double pawn moves that could enable an en passant
     Bitboard enPassant;
@@ -45,20 +45,24 @@ struct Chessboard {
     Chessboard();
 
     // Move generation
-    // MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
-    void generateLegalMoves(); // Generate only validated pseudo legal moves
-    // TEMPORARY MOVE GEN
-    void generatePseudoLegalMoves();
+    // Generate all legal moves for current player
+    MoveList generateLegalMoves();
+    // Generate possible moves not considering check, ally piece placement, etc
+    MoveList generatePseudoLegalMoves();
 
     // Square info
+    // Returns the piece type at a given square
     PieceType pieceAt(Square square);
+    // Returns whether or not a given square is under attack by the opponent
     bool underAttack(Square square);
 
     // Board manipulation
-    void push(Move move); // Play a move to the board
-    void pop(); // Undo the last move made
+    // Play a move to the board
+    void push(Move move);
+    // Undo the last move made
+    void pop();
 
-    // Game ending detection
+    // Endgame detection
     bool isCheck();
     bool isCheckmate();
     Color winningSide();

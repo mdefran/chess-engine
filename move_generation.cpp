@@ -37,31 +37,33 @@ void initializeLookupTables() {
 }
 
 // Pushes moves to the pseudo legal move list, marking captures and ignoring friendly fire
-void pushPseudoLegalMove(Chessboard &chessboard, Square fromSquare, Square toSquare) {
+void pushPseudoLegalMove(Chessboard &chessboard, MoveList moves, Square fromSquare, Square toSquare) {
     // Set the move type to capture if the destination square is occupied by an enemy piece
     Move::MoveType type = (BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
     // If the destination square is occupied by an ally piece, do not push the move; otherwise, push it to the vector      
     if ((BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)) == 0)
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, type));
+        moves.push_back(Move(fromSquare, toSquare, type));
 }
 
-void pushPseudoLegalPromotion(Chessboard &chessboard, Square fromSquare, Square toSquare) {
+// Handles special cases of pawn promotion move generation
+void pushPseudoLegalPromotion(Chessboard &chessboard, MoveList &moves, Square fromSquare, Square toSquare) {
     // Push captures if an enemy piece is present
     if (BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces)) {
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotionCapture));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotionCapture));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotionCapture));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotionCapture));
+        moves.push_back(Move(fromSquare, toSquare, Move::KnightPromotionCapture));
+        moves.push_back(Move(fromSquare, toSquare, Move::BishopPromotionCapture));
+        moves.push_back(Move(fromSquare, toSquare, Move::RookPromotionCapture));
+        moves.push_back(Move(fromSquare, toSquare, Move::QueenPromotionCapture));
     // Push normal promotions if the destination square is vacant
     } else if ((BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)) == 0) {
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
-        chessboard.pseudoLegalMoves.push_back(Move(fromSquare, toSquare, Move::QueenPromotion));
+        moves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
+        moves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
+        moves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
+        moves.push_back(Move(fromSquare, toSquare, Move::QueenPromotion));
     }
 }
 
-void generatePawnMoves(Chessboard &chessboard) {
+MoveList generatePawnMoves(Chessboard &chessboard) {
+    MoveList pawnMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whitePawns : chessboard.blackPawns;
     Bitboard toSquares;
 
@@ -73,9 +75,9 @@ void generatePawnMoves(Chessboard &chessboard) {
 
         // Add double advances when origin square is starting position and there are no pieces directly in front
         if (chessboard.turn == White && (BITBOARD(fromSquare) & RANK_2) && ((((BITBOARD(fromSquare) << 8) | (BITBOARD(fromSquare) << 16)) & chessboard.allPieces) == 0))
-            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, static_cast<Square>(GET_LSB(BITBOARD(fromSquare) << 16)), Move::DoublePawnPush));
+            pawnMoves.push_back(Move(fromSquare, static_cast<Square>(GET_LSB(BITBOARD(fromSquare) << 16)), Move::DoublePawnPush));
         if (chessboard.turn == Black && (BITBOARD(fromSquare) & RANK_7) && ((((BITBOARD(fromSquare) >> 8) | (BITBOARD(fromSquare) >> 16)) & chessboard.allPieces) == 0))
-            chessboard.pseudoLegalMoves.push_back(Move(fromSquare, static_cast<Square>(GET_LSB(BITBOARD(fromSquare) >> 16)), Move::DoublePawnPush));
+            pawnMoves.push_back(Move(fromSquare, static_cast<Square>(GET_LSB(BITBOARD(fromSquare) >> 16)), Move::DoublePawnPush));
 
         // Add diagonal captures
         Bitboard potentialCaptures = (chessboard.turn == White) ? whitePawnCaptures[fromSquare] : blackPawnCaptures[fromSquare];
@@ -87,9 +89,9 @@ void generatePawnMoves(Chessboard &chessboard) {
 
         // Add en passant
         if (chessboard.enPassant == east(BITBOARD(fromSquare)))
-            chessboard.pseudoLegalMoves.push_back(Move(BITBOARD(fromSquare), ((chessboard.turn = White) ? northeast(BITBOARD(fromSquare)) : southeast(BITBOARD(fromSquare))), Move::EnPassant));
+            pawnMoves.push_back(Move(BITBOARD(fromSquare), ((chessboard.turn = White) ? northeast(BITBOARD(fromSquare)) : southeast(BITBOARD(fromSquare))), Move::EnPassant));
         if (chessboard.enPassant == west(BITBOARD(fromSquare)))
-            chessboard.pseudoLegalMoves.push_back(Move(BITBOARD(fromSquare), ((chessboard.turn = White) ? northwest(BITBOARD(fromSquare)) : southwest(BITBOARD(fromSquare))), Move::EnPassant));
+            pawnMoves.push_back(Move(BITBOARD(fromSquare), ((chessboard.turn = White) ? northwest(BITBOARD(fromSquare)) : southwest(BITBOARD(fromSquare))), Move::EnPassant));
 
         // Push pseudo legal moves
         Move move;
@@ -97,15 +99,18 @@ void generatePawnMoves(Chessboard &chessboard) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             // If the pawn has reached the end of the board, add promotions
             if (BITBOARD(toSquare) & (RANK_1 | RANK_8))
-                pushPseudoLegalPromotion(chessboard, fromSquare, toSquare);
+                pushPseudoLegalPromotion(chessboard, pawnMoves, fromSquare, toSquare);
             // Otherwise, add normal moves
             else
-                pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+                pushPseudoLegalMove(chessboard, pawnMoves, fromSquare, toSquare);
         }
     }
+
+    return pawnMoves;
 }
 
-void generateKnightMoves(Chessboard &chessboard) {
+MoveList generateKnightMoves(Chessboard &chessboard) {
+    MoveList knightMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteKnights : chessboard.blackKnights;
     while (fromSquares != 0) {
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
@@ -114,12 +119,14 @@ void generateKnightMoves(Chessboard &chessboard) {
         Move move;
         while (toSquares != 0) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-            pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+            pushPseudoLegalMove(chessboard, knightMoves, fromSquare, toSquare);
         }
     }
+    return knightMoves;
 }
 
-void generateRookMoves(Chessboard &chessboard) {
+MoveList generateRookMoves(Chessboard &chessboard) {
+    MoveList rookMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteRooks : chessboard.blackRooks;
     Bitboard toSquares = 0ULL;
 
@@ -173,12 +180,15 @@ void generateRookMoves(Chessboard &chessboard) {
         Move move;
         while (toSquares != 0) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-            pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+            pushPseudoLegalMove(chessboard, rookMoves, fromSquare, toSquare);
         }
     }
+
+    return rookMoves;
 }
 
-void generateBishopMoves(Chessboard &chessboard) {
+MoveList generateBishopMoves(Chessboard &chessboard) {
+    MoveList bishopMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteBishops : chessboard.blackBishops;
     Bitboard toSquares = 0ULL;
 
@@ -232,12 +242,15 @@ void generateBishopMoves(Chessboard &chessboard) {
         Move move;
         while (toSquares != 0) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-            pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+            pushPseudoLegalMove(chessboard, bishopMoves, fromSquare, toSquare);
         }
     }
+
+    return bishopMoves;
 }
 
-void generateQueenMoves(Chessboard &chessboard) {
+MoveList generateQueenMoves(Chessboard &chessboard) {
+    MoveList queenMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteQueen : chessboard.blackQueen;
     Bitboard toSquares = 0ULL;
 
@@ -327,12 +340,15 @@ void generateQueenMoves(Chessboard &chessboard) {
         Move move;
         while (toSquares != 0) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-            pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+            pushPseudoLegalMove(chessboard, queenMoves, fromSquare, toSquare);
         }
     }
+
+    return queenMoves;
 }
 
-void generateKingMoves(Chessboard &chessboard) {
+MoveList generateKingMoves(Chessboard &chessboard) {
+    MoveList kingMoves;
     Square fromSquare = (chessboard.turn == White) ? static_cast<Square>(POP_LSB(chessboard.whiteKing)) : static_cast<Square>(POP_LSB(chessboard.blackKing));
     Bitboard toSquares = kingAttacks[fromSquare];
     
@@ -340,66 +356,96 @@ void generateKingMoves(Chessboard &chessboard) {
     // Check for pseudo legal castling
     if (chessboard.turn == White) {
         if (chessboard.whiteKingCastle == true && (chessboard.allPieces & (0x6ULL)) == 0)
-            chessboard.pseudoLegalMoves.push_back(Move(Square::e1, Square::g1, Move::KingCastle));
+            kingMoves.push_back(Move(Square::e1, Square::g1, Move::KingCastle));
         if (chessboard.whiteQueenCastle == true && (chessboard.allPieces & (0x70ULL)) == 0)
-            chessboard.pseudoLegalMoves.push_back(Move(Square::e1, Square::c1, Move::QueenCastle));
+            kingMoves.push_back(Move(Square::e1, Square::c1, Move::QueenCastle));
     } else {
         if (chessboard.blackKingCastle == true && (chessboard.allPieces & (0x600000000000000ULL)) == 0)
-            chessboard.pseudoLegalMoves.push_back(Move(Square::e8, Square::g8, Move::KingCastle));
+            kingMoves.push_back(Move(Square::e8, Square::g8, Move::KingCastle));
         if (chessboard.blackQueenCastle == true && (chessboard.allPieces & (0x7000000000000000) == 0))
-            chessboard.pseudoLegalMoves.push_back(Move(Square::e8, Square::c8, Move::QueenCastle));
+            kingMoves.push_back(Move(Square::e8, Square::c8, Move::QueenCastle));
     }
 
+    // Add normal adjacent moves
     while (toSquares != 0) {
         Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-        pushPseudoLegalMove(chessboard, fromSquare, toSquare);
+        pushPseudoLegalMove(chessboard, kingMoves, fromSquare, toSquare);
     }
+
+    return kingMoves;
 }
 
-void Chessboard::generatePseudoLegalMoves() {
-    generatePawnMoves(*this);
-    generateKnightMoves(*this);
-    generateRookMoves(*this);
-    generateBishopMoves(*this);
-    generateQueenMoves(*this);
-    generateKingMoves(*this);
+MoveList Chessboard::generatePseudoLegalMoves() {
+    MoveList pseudoLegalMoves;
+
+    // Generate moves piece type by piece type
+    MoveList pawnMoves = generatePawnMoves(*this);
+    MoveList knightMoves = generateKnightMoves(*this);
+    MoveList rookMoves = generateRookMoves(*this);
+    MoveList bishopMoves = generateBishopMoves(*this);
+    MoveList queenMoves = generateQueenMoves(*this);
+    MoveList kingMoves = generateKingMoves(*this);
+
+    // Append the moves to a cumulative list
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), pawnMoves.begin(), pawnMoves.end());
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), knightMoves.begin(), knightMoves.end());
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), rookMoves.begin(), rookMoves.end());
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), bishopMoves.begin(), bishopMoves.end());
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), queenMoves.begin(), queenMoves.end());
+    pseudoLegalMoves.insert(pseudoLegalMoves.end(), kingMoves.begin(), kingMoves.end());
+
+    return pseudoLegalMoves;
 }
 
-void Chessboard::generateLegalMoves() {
-    // Generate the pseudo legal moves
-    this->generatePseudoLegalMoves();
-
-    // Switch turns to generate opponent's moves
-    this->turn = (this->turn == White) ? Black : White;
+MoveList Chessboard::generateLegalMoves() {
+    MoveList legalMoves;
 
     // Generate pseudo legal moves
-    // A pseudo legal move that captures the king cannot be illegal as it is game ending
-    this->generatePseudoLegalMoves();
+    MoveList pseudoLegalMoves = this->generatePseudoLegalMoves();
 
-    // Add all moves where the king is not a target
-    for (int i = 0; i < this->pseudoLegalMoves.size(); i++) {
-        Move move = this->pseudoLegalMoves[i];
-        if (!move.isCapture() || (BITBOARD(move.getToSquare()) != ((this->turn == White) ? this->blackKing : this->whiteKing))) // Colors reversed as turn is passed to opponent momentarily
-            legalMoves.push_back(move);
+    // Iterate through the moves
+    for (int i = 0; i < pseudoLegalMoves.size(); i++) {
+        Move pseudoLegalMove = pseudoLegalMoves[i];
+        bool legal = true;
+        this->push(pseudoLegalMove);
+
+        // Generate opponent's responses
+        this->turn = (this->turn == White) ? Black : White;
+        MoveList enemyMoves = this->generatePseudoLegalMoves();
+        this->turn = (this->turn == White) ? Black : White;
+
+        // Iterate through responses
+        for (int j = 0; j < enemyMoves.size(); j++) {
+            Move enemyMove = enemyMoves[j];
+            // If the move puts the king in check, do not push it
+            if (enemyMove.isCapture() && (BITBOARD(enemyMove.getToSquare()) == ((this->turn == White) ? this->whiteKing : this->blackKing)))
+                legal = false;
+        }
+
+        // Add legal moves
+        if (legal)
+            legalMoves.push_back(pseudoLegalMove);
+
+        // Undo the tested move
+        this->pop();
     }
 
-    // Switch turn back to current player
-    this->turn = (this->turn == White) ? Black : White;
+    return legalMoves;
 }
 
 int main () {
     Chessboard chessboard;
     initializeLookupTables();
-    chessboard.generatePseudoLegalMoves();
+    MoveList legalMoves = chessboard.generatePseudoLegalMoves();
 
-    while (!chessboard.pseudoLegalMoves.empty()) {
-        Move move = chessboard.pseudoLegalMoves.back();
+    while (!legalMoves.empty()) {
+        Move move = legalMoves.back();
         move.printMove();
         printBitboard(BITBOARD(move.getFromSquare()));
         printf("\n");
         printBitboard(BITBOARD(move.getToSquare()));
         printf("\n");
-        chessboard.pseudoLegalMoves.pop_back();
+        legalMoves.pop_back();
     }
 
     return 0;
