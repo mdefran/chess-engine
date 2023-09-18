@@ -365,6 +365,28 @@ void Chessboard::generatePseudoLegalMoves() {
     generateKingMoves(*this);
 }
 
+void Chessboard::generateLegalMoves() {
+    // Generate the pseudo legal moves
+    this->generatePseudoLegalMoves();
+
+    // Switch turns to generate opponent's moves
+    this->turn = (this->turn == White) ? Black : White;
+
+    // Generate pseudo legal moves
+    // A pseudo legal move that captures the king cannot be illegal as it is game ending
+    this->generatePseudoLegalMoves();
+
+    // Add all moves where the king is not a target
+    for (int i = 0; i < this->pseudoLegalMoves.size(); i++) {
+        Move move = this->pseudoLegalMoves[i];
+        if (!move.isCapture() || (BITBOARD(move.getToSquare()) != ((this->turn == White) ? this->blackKing : this->whiteKing))) // Colors reversed as turn is passed to opponent momentarily
+            legalMoves.push_back(move);
+    }
+
+    // Switch turn back to current player
+    this->turn = (this->turn == White) ? Black : White;
+}
+
 int main () {
     Chessboard chessboard;
     initializeLookupTables();

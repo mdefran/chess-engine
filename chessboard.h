@@ -46,7 +46,7 @@ struct Chessboard {
 
     // Move generation
     // MoveList generatePseudoLegalMoves(); // Generate possible moves not considering check, ally piece placement, etc
-    MoveList generateLegalMoves(); // Generate only validated pseudo legal moves
+    void generateLegalMoves(); // Generate only validated pseudo legal moves
     // TEMPORARY MOVE GEN
     void generatePseudoLegalMoves();
 
