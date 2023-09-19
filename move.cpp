@@ -12,8 +12,8 @@ Square Move::getFromSquare() {return static_cast<Square>(this->move & 0x3F); }
 Square Move::getToSquare() { return static_cast<Square>((this->move >> 6) & 0x3F); }
 Move::MoveType Move::getMoveType() { return static_cast<MoveType>((this->move >> 12) & 0xF); }
 bool Move::isQuiet() { return !(static_cast<bool>(this->move >> 12)); } // Inverted because quiet is 0b0000, which is false
-bool Move::isCapture() { return static_cast<bool>(this->move & (1 << 15) != 0); }
-bool Move::isPromotion() { return static_cast<bool>(this->move & (1 << 14) != 0); }
+bool Move::isCapture() { return static_cast<bool>(this->move & (1 << 15)); }
+bool Move::isPromotion() { return static_cast<bool>(this->move & (1 << 14)); }
 bool Move::isNull() { return !(this->move); }
 
 // Display functions

@@ -38,7 +38,7 @@ void Chessboard::initializeLookupTables() {
 // Pushes moves to the pseudo legal move list, marking captures and ignoring friendly fire
 void pushPseudoLegalMove(Chessboard &chessboard, MoveList moves, Square fromSquare, Square toSquare) {
     // Set the move type to capture if the destination square is occupied by an enemy piece
-    Move::MoveType type = (BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces) != 0) ? Move::Capture : Move::Quiet;
+    Move::MoveType type = (BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces)) ? Move::Capture : Move::Quiet;
     // If the destination square is occupied by an ally piece, do not push the move; otherwise, push it to the vector      
     if ((BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)) == 0)
         moves.push_back(Move(fromSquare, toSquare, type));
@@ -111,12 +111,12 @@ MoveList generatePawnMoves(Chessboard &chessboard) {
 MoveList generateKnightMoves(Chessboard &chessboard) {
     MoveList knightMoves;
     Bitboard fromSquares = (chessboard.turn == White) ? chessboard.whiteKnights : chessboard.blackKnights;
-    while (fromSquares != 0) {
+    while (fromSquares) {
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
         Bitboard toSquares = knightAttacks[fromSquare];
 
         Move move;
-        while (toSquares != 0) {
+        while (toSquares) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             pushPseudoLegalMove(chessboard, knightMoves, fromSquare, toSquare);
         }
@@ -130,7 +130,7 @@ MoveList generateRookMoves(Chessboard &chessboard) {
     Bitboard toSquares = 0ULL;
 
     // Generate potential moves
-    while (fromSquares != 0) {
+    while (fromSquares) {
         // Get starting square information
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
         int rank = fromSquare / 8;
@@ -177,7 +177,7 @@ MoveList generateRookMoves(Chessboard &chessboard) {
 
         // Push pseudo legal move
         Move move;
-        while (toSquares != 0) {
+        while (toSquares) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             pushPseudoLegalMove(chessboard, rookMoves, fromSquare, toSquare);
         }
@@ -192,7 +192,7 @@ MoveList generateBishopMoves(Chessboard &chessboard) {
     Bitboard toSquares = 0ULL;
 
     // Generate potential moves
-    while (fromSquares != 0) {
+    while (fromSquares) {
         // Get starting square information
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
         int rank = fromSquare / 8;
@@ -239,7 +239,7 @@ MoveList generateBishopMoves(Chessboard &chessboard) {
 
         // Push pseudo legal moves
         Move move;
-        while (toSquares != 0) {
+        while (toSquares) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             pushPseudoLegalMove(chessboard, bishopMoves, fromSquare, toSquare);
         }
@@ -254,7 +254,7 @@ MoveList generateQueenMoves(Chessboard &chessboard) {
     Bitboard toSquares = 0ULL;
 
     // Generate potential moves
-    while (fromSquares != 0) {
+    while (fromSquares) {
         // Get starting square information
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
         int rank = fromSquare / 8;
@@ -337,7 +337,7 @@ MoveList generateQueenMoves(Chessboard &chessboard) {
 
         // Push pseudo legal move
         Move move;
-        while (toSquares != 0) {
+        while (toSquares) {
             Square toSquare = static_cast<Square>(POP_LSB(toSquares));
             pushPseudoLegalMove(chessboard, queenMoves, fromSquare, toSquare);
         }
@@ -366,7 +366,7 @@ MoveList generateKingMoves(Chessboard &chessboard) {
     }
 
     // Add normal adjacent moves
-    while (toSquares != 0) {
+    while (toSquares) {
         Square toSquare = static_cast<Square>(POP_LSB(toSquares));
         pushPseudoLegalMove(chessboard, kingMoves, fromSquare, toSquare);
     }
