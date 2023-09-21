@@ -13,41 +13,39 @@
 
 int main() {
     Chessboard chessboard;
-    MoveList pseudoLegalMoves;
+    MoveList legalMoves;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     int moves = 0;
 
     printChessboard(chessboard);
-    for (int i = 0; i < 100; i++) {
-        pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
-        if (pseudoLegalMoves.empty()) {
-            moves = i;
+    while (true) {
+        if (chessboard.isCheckmate()) {
+            printf("WINNER: %d\n", chessboard.winner);
             break;
         }
 
+        legalMoves = chessboard.generateLegalMoves();
         Move bestMove;
 
-        int rand = std::rand() % pseudoLegalMoves.size();
-        bestMove = pseudoLegalMoves[rand];
+        if (legalMoves.empty()) {
+            printf("STALEMATE");
+            break;
+        }
 
-        for (int i = 0; i < pseudoLegalMoves.size(); i++) {
-            Move move = pseudoLegalMoves[i];
+        int rand = std::rand() % legalMoves.size();
+        bestMove = legalMoves[rand];
+
+        for (int i = 0; i < legalMoves.size(); i++) {
+            Move move = legalMoves[i];
             if (move.isCapture())
                 bestMove = move;
         }
 
         chessboard.push(bestMove);
-        printf("%d: ", i+1);
+        printf("%d: ", moves+1);
         bestMove.printMove();
         printChessboard(chessboard);
-    }
-
-    printChessboard(chessboard);
-    for (int i = 0; i < moves; i++) {
-        std::cout << "Undo: ";
-        chessboard.pastMoves.back().printMove();
-        chessboard.pop();
-        printChessboard(chessboard);
+        moves++;
     }
 
     return 0;
