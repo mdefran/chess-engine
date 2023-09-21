@@ -28,6 +28,9 @@ struct Chessboard {
     // Active player
     Color turn;
 
+    // Player who won
+    Color winner;
+
     // Tracks moves made so far
     MoveList pastMoves;
 
@@ -69,7 +72,6 @@ struct Chessboard {
     // Endgame detection
     bool isCheck();
     bool isCheckmate();
-    Color winningSide();
     bool isStalemate();
 };
 
