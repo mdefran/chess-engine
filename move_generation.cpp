@@ -36,11 +36,11 @@ void Chessboard::initializeLookupTables() {
 }
 
 // Pushes moves to the pseudo legal move list, marking captures and ignoring friendly fire
-void pushPseudoLegalMove(Chessboard &chessboard, MoveList moves, Square fromSquare, Square toSquare) {
+void pushPseudoLegalMove(Chessboard &chessboard, MoveList &moves, Square fromSquare, Square toSquare) {
     // Set the move type to capture if the destination square is occupied by an enemy piece
     Move::MoveType type = (BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.blackPieces : chessboard.whitePieces)) ? Move::Capture : Move::Quiet;
     // If the destination square is occupied by an ally piece, do not push the move; otherwise, push it to the vector      
-    if ((BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)) == 0)
+    if (!(BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)))
         moves.push_back(Move(fromSquare, toSquare, type));
 }
 
@@ -53,7 +53,7 @@ void pushPseudoLegalPromotion(Chessboard &chessboard, MoveList &moves, Square fr
         moves.push_back(Move(fromSquare, toSquare, Move::RookPromotionCapture));
         moves.push_back(Move(fromSquare, toSquare, Move::QueenPromotionCapture));
     // Push normal promotions if the destination square is vacant
-    } else if ((BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces)) == 0) {
+    } else if (!(BITBOARD(toSquare) & ((chessboard.turn == White) ? chessboard.whitePieces : chessboard.blackPieces))) {
         moves.push_back(Move(fromSquare, toSquare, Move::KnightPromotion));
         moves.push_back(Move(fromSquare, toSquare, Move::BishopPromotion));
         moves.push_back(Move(fromSquare, toSquare, Move::RookPromotion));
@@ -348,7 +348,7 @@ MoveList generateQueenMoves(Chessboard &chessboard) {
 
 MoveList generateKingMoves(Chessboard &chessboard) {
     MoveList kingMoves;
-    Square fromSquare = (chessboard.turn == White) ? static_cast<Square>(POP_LSB(chessboard.whiteKing)) : static_cast<Square>(POP_LSB(chessboard.blackKing));
+    Square fromSquare = (chessboard.turn == White) ? static_cast<Square>(GET_LSB(chessboard.whiteKing)) : static_cast<Square>(GET_LSB(chessboard.blackKing));
     Bitboard toSquares = kingAttacks[fromSquare];
     
     Move move;

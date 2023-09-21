@@ -14,6 +14,7 @@ void printBitboard(Bitboard bitboard) {
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 void printChessboard(Chessboard &chessboard) {
@@ -51,4 +52,5 @@ void printChessboard(Chessboard &chessboard) {
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
 }

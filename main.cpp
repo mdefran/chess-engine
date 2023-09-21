@@ -10,6 +10,20 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+
+int main1() {
+    Chessboard chessboard;
+    MoveList pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
+
+    printChessboard(chessboard);
+    for (int i = 0; i < pseudoLegalMoves.size(); i++) {
+        Move pseudoLegalMove = pseudoLegalMoves[i];
+        pseudoLegalMove.printMove();
+    }
+
+    return 0;
+}
+
 int main () {
     Chessboard chessboard;
     MoveList pseudoLegalMoves;
