@@ -18,11 +18,9 @@ bool Move::isNull() { return !(this->move); }
 
 // Display functions
 void Move::printMove() {
-    std::cout << squareNames[this->getFromSquare()] << " " << squareNames[this->getToSquare()];
-    std::cout << " " << this->move;
-    std::cout << " " << this->getMoveType();
-    if (this->isQuiet()) std::cout << " Q";
-    if (this->isCapture()) std::cout << " C";
-    if (this->isPromotion()) std::cout << " P";
+    std::cout << squareNames[this->getFromSquare()] << " --> " << squareNames[this->getToSquare()];
+    if (this->isQuiet()) std::cout << " Quiet";
+    if (this->isCapture()) std::cout << " Capture";
+    if (this->isPromotion()) std::cout << " Promotion";
     std:: cout << std::endl;
 }
