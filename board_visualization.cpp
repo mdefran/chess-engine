@@ -17,10 +17,12 @@ void printBitboard(Bitboard bitboard) {
     std::cout << std::endl;
 }
 
+
 void printChessboard(Chessboard &chessboard) {
+    std::cout << "  a b c d e f g h" << std::endl;
     for (int rank = 7; rank >= 0; rank--) {
         std::cout << rank + 1 << " ";
-        for (int file = 0; file < 8; file++) {
+        for (int file = 7; file >= 0; file--) {
             int square = rank * 8 + file;
             Bitboard mask = BITBOARD(square);
             // Find the piece on the square and print it
@@ -53,6 +55,5 @@ void printChessboard(Chessboard &chessboard) {
         }
         std::cout << std::endl;
     }
-    std::cout << "  a b c d e f g h" << std::endl;
     std::cout << std::endl;
 }
