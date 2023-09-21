@@ -55,6 +55,20 @@ PieceType Chessboard::pieceAt(Square square) {
     }
 }
 
+// Check if a square is under attack by the enemy
+bool Chessboard::underAttack(Square square) {
+    // Generate the opponent's possible moves
+    this->passTurn();
+    MoveList enemyMoves = this->generateLegalMoves();
+    this->passTurn();
+
+    // The piece is under attack if one of the moves lands on the given square
+    for (int i = 0; i < enemyMoves.size(); i++)
+        if (enemyMoves[i].isCapture() && enemyMoves[i].getToSquare() == square)
+            return true;
+    return false;
+}
+
 // Pass board control to the opponent
 void Chessboard::passTurn() {
     turn = (turn == White) ? Black : White;
