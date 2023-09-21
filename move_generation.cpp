@@ -418,12 +418,10 @@ MoveList Chessboard::generateLegalMoves() {
         this->passTurn();
 
         // Iterate through responses
-        for (int j = 0; j < enemyMoves.size(); j++) {
-            Move enemyMove = enemyMoves[j];
+        for (int j = 0; j < enemyMoves.size(); j++)
             // If the move puts the current player's king in check, it is not legal
-            if (enemyMove.isCapture() && (BITBOARD(enemyMove.getToSquare()) == ((this->turn == White) ? this->whiteKing : this->blackKing)))
+            if (enemyMoves[j].isCapture() && (BITBOARD(enemyMoves[j].getToSquare()) == ((this->turn == White) ? this->whiteKing : this->blackKing)))
                 legal = false;
-        }
 
         // Add legal moves
         if (legal)
