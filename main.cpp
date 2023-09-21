@@ -11,31 +11,28 @@
 #include <ctime>
 #include <random>
 
-int main1() {
-    Chessboard chessboard;
-    MoveList pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
-
-    printChessboard(chessboard);
-    for (int i = 0; i < pseudoLegalMoves.size(); i++) {
-        Move pseudoLegalMove = pseudoLegalMoves[i];
-        pseudoLegalMove.printMove();
-    }
-
-    return 0;
-}
-
-int main () {
+int main() {
     Chessboard chessboard;
     MoveList pseudoLegalMoves;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     printChessboard(chessboard);
     printf("\n");
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 20; i++) {
         pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
+        Move bestMove;
+
         int rand = std::rand() % pseudoLegalMoves.size();
-        chessboard.push(pseudoLegalMoves[rand]);
-        pseudoLegalMoves[rand].printMove();
+        bestMove = pseudoLegalMoves[rand];
+
+        for (int i = 0; i < pseudoLegalMoves.size(); i++) {
+            Move move = pseudoLegalMoves[i];
+            if (move.isCapture())
+                bestMove = move;
+        }
+
+        chessboard.push(bestMove);
+        bestMove.printMove();
         printChessboard(chessboard);
         printf("\n");
     }

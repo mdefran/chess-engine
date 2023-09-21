@@ -68,9 +68,12 @@ MoveList generatePawnMoves(Chessboard &chessboard) {
 
     while (fromSquares != 0) {
         Square fromSquare = static_cast<Square>(POP_LSB(fromSquares));
+        Bitboard toSquares = 0ULL;
 
         // Add normal advances
-        Bitboard toSquares = (chessboard.turn == White) ? whitePawnAdvances[fromSquare] : blackPawnAdvances[fromSquare];
+        Bitboard standardAdvance = (chessboard.turn == White) ? whitePawnAdvances[fromSquare] : blackPawnAdvances[fromSquare];
+        if (!(standardAdvance & chessboard.allPieces))
+            toSquares |= standardAdvance;
 
         // Add double advances when origin square is starting position and there are no pieces directly in front
         if (chessboard.turn == White && (BITBOARD(fromSquare) & RANK_2) && ((((BITBOARD(fromSquare) << 8) | (BITBOARD(fromSquare) << 16)) & chessboard.allPieces) == 0))
@@ -212,7 +215,7 @@ MoveList generateBishopMoves(Chessboard &chessboard) {
 
         // Southeast
         for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
-            toSquare = BITBOARD(r * 8 + file);
+            toSquare = BITBOARD(r * 8 + f);
             toSquares |= toSquare;
             // Stop once a piece is hit
             if (chessboard.allPieces & toSquare)

@@ -167,6 +167,7 @@ void Chessboard::push(Move move) {
             case PieceType::Pawn:
                 capturedPieces.push_back(PieceType::Pawn);
                 captureBoard = (turn == White) ? &blackPawns : &whitePawns;
+                break;
             case PieceType::Knight:
                 capturedPieces.push_back(PieceType::Knight);
                 captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
