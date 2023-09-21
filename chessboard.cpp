@@ -69,6 +69,27 @@ bool Chessboard::underAttack(Square square) {
     return false;
 }
 
+// Returns true if a king is under attack
+bool Chessboard::isCheck() {
+    return underAttack(static_cast<Square>(GET_LSB((turn == White) ? whiteKing : blackKing)));
+}
+
+// Check if a player has won and update winner if so
+bool Chessboard::isCheckmate() {
+    // Check if there is a move that gets the king out of check
+    MoveList legalMoves = this->generateLegalMoves();
+    for (int i = 0; i < legalMoves.size(); i++) {
+        this->push(legalMoves[i]);
+        if (!this->isCheck()) {
+            this->pop();
+            return false;
+        }
+        this->pop();
+    }
+    winner = (turn == White) ? Black : White;
+    return true;
+}
+
 // Pass board control to the opponent
 void Chessboard::passTurn() {
     turn = (turn == White) ? Black : White;
