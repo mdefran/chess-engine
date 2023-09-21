@@ -157,13 +157,9 @@ void Chessboard::push(Move move) {
     SET_BIT(*movingBoard, toSquare);
 
     // Erase pieces at capture positions
-    if (move.isCapture()) {
+    if (move.isCapture() && moveType != Move::EnPassant) {
         Bitboard *captureBoard;
         switch (toPiece) {
-            case PieceType::None:
-                // Keep captured pieces in sync with move history
-                capturedPieces.push_back(PieceType::None);
-                break;
             case PieceType::Pawn:
                 capturedPieces.push_back(PieceType::Pawn);
                 captureBoard = (turn == White) ? &blackPawns : &whitePawns;
@@ -191,7 +187,11 @@ void Chessboard::push(Move move) {
         }
 
         // Clear the piece and add it to captured piece history
-        CLEAR_BIT(*captureBoard, toSquare);
+        CLEAR_BIT(*captureBoard, toSquare);\
+    
+    // Add blank captures to non capture moves to keep pastMoves and capturedPieces in sync
+    } else if (moveType != Move::EnPassant) {
+        capturedPieces.push_back(PieceType::None);
     }
 
     // Perform promotions
@@ -243,14 +243,23 @@ void Chessboard::pop() {
     // Get information about the last move
     Move lastMove = pastMoves.back();
     Square fromSquare = lastMove.getFromSquare(), toSquare = lastMove.getToSquare();
-    PieceType fromPiece = pieceAt(fromSquare);
+    PieceType fromPiece = pieceAt(fromSquare), capturedPiece = capturedPieces.back();
     Move::MoveType moveType = lastMove.getMoveType();
 
     // Delete the move from history
     pastMoves.pop_back();
+    capturedPieces.pop_back();
 
     // Transfer control of the board back to the player who made the move being popped
-    turn = (turn == White) ? Black : White;
+    this->passTurn();
+
+    // Move the piece back to its original position
+    Move undoMove = Move(toSquare, fromSquare, Move::Quiet); // To and from squares reversed
+    this->push(undoMove);
+    // Undo side effects of pushing the undo move
+    this->passTurn();
+    pastMoves.pop_back();
+    capturedPieces.pop_back();
 
     // Undo promotions
     if (lastMove.isPromotion()) {
@@ -303,39 +312,68 @@ void Chessboard::pop() {
     blackQueenCastle = blackQueenCastleBeforeMove;
 
     // Undo rook movement from castling
-    // REVERSE CONDITIONS, THIS IS FROM PUSH
     if (turn == White && moveType == Move::KingCastle) {
-        whiteKingCastle = false;
-        this->push(Move(Square::h1, Square::f1, Move::Quiet));
+        this->push(Move(Square::f1, Square::h1, Move::Quiet));
         this->pop(); // Remove the extra move just logged as castling is recorded as one move
     } else if (turn == White && moveType == Move::QueenCastle) {
-        whiteQueenCastle = false;
-        this->push(Move(Square::a1, Square::d1, Move::Quiet));
+        this->push(Move(Square::d1, Square::a1, Move::Quiet));
         this->pop();
     } else if (turn == Black && moveType == Move::KingCastle) {
-        blackKingCastle == false;
-        this->push(Move(Square::h8, Square::f8, Move::Quiet));
+        this->push(Move(Square::f8, Square::h8, Move::Quiet));
         this->pop();
     } else if (turn == Black && moveType == Move::QueenCastle) {
-        blackQueenCastle == false;
-        this->push(Move(Square::a8, Square::d8, Move::Quiet));
+        this->push(Move(Square::d8, Square::a8, Move::Quiet));
         this->pop();
     }
 
     // Replace captured pieces
     if (lastMove.isCapture() && moveType != Move::EnPassant) {
-        
+        Bitboard *captureBoard;
+        switch (capturedPiece) {
+            case PieceType::None:
+                break;
+            case PieceType::Pawn:
+                captureBoard = (turn == White) ? &blackPawns : &whitePawns;
+                break;
+            case PieceType::Knight:
+                captureBoard = (turn == White) ? &blackKnights : &whiteKnights;
+                break;
+            case PieceType::Bishop:
+                captureBoard = (turn == White) ? &blackBishops : &whiteBishops;
+                break;
+            case PieceType::Rook:
+                captureBoard = (turn == White) ? &blackRooks : &whiteRooks;
+                break;
+            case PieceType::Queen:
+                captureBoard = (turn == White) ? &blackQueen : &whiteQueen;
+                break;
+            case PieceType::King:
+                captureBoard = (turn == White) ? &blackKing : &whiteKing;
+                break;
+        }
+
+        // Clear the piece and add it to captured piece history
+        SET_BIT(*captureBoard, toSquare);
     }
 
-    // Handle pawns captured by en passant
+    // Restore pawns captured by en passant
     if (moveType == Move::EnPassant) {
         Bitboard *enPassantBoard = (turn == White) ? &whitePawns : &blackPawns; // Opposite of player who made the last move, as we are restoring the piece from 2 moves ago
-        SET_BIT(*enPassantBoard, GET_LSB(enPassant));
+        SET_BIT(*enPassantBoard, POP_LSB(enPassant));
         capturedPieces.pop_back();
     }
 
-    // Move the piece back to its original position
-    Move undoMove = Move(toSquare, fromSquare, Move::Quiet); // To and from squares reversed
-    this->push(undoMove);
-    pastMoves.pop_back(); // Pop a second time to remove the undo move from history
+    // Update cumulative bitboards
+    if (turn == White) {
+        SET_BIT(whitePieces, fromSquare);
+        CLEAR_BIT(whitePieces, toSquare);
+        if (lastMove.isCapture())
+            SET_BIT(blackPieces, toSquare);
+    } else {
+        SET_BIT(blackPieces, fromSquare);
+        CLEAR_BIT(blackPieces, toSquare);
+        if (lastMove.isCapture())
+            SET_BIT(whitePieces, toSquare);
+    }
+    allPieces = whitePieces | blackPieces;
 }
