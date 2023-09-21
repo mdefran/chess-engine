@@ -15,10 +15,16 @@ int main() {
     Chessboard chessboard;
     MoveList pseudoLegalMoves;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    int moves = 0;
 
     printChessboard(chessboard);
-    for (int i = 0; i < 75; i++) {
+    for (int i = 0; i < 100; i++) {
         pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
+        if (pseudoLegalMoves.empty()) {
+            moves = i;
+            break;
+        }
+
         Move bestMove;
 
         int rand = std::rand() % pseudoLegalMoves.size();
@@ -31,12 +37,13 @@ int main() {
         }
 
         chessboard.push(bestMove);
+        printf("%d: ", i+1);
         bestMove.printMove();
         printChessboard(chessboard);
     }
 
     printChessboard(chessboard);
-    for (int i = 0; i < 75; i++) {
+    for (int i = 0; i < moves; i++) {
         std::cout << "Undo: ";
         chessboard.pastMoves.back().printMove();
         chessboard.pop();
