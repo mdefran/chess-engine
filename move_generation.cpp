@@ -351,29 +351,30 @@ MoveList generateQueenMoves(Chessboard &chessboard) {
 
 MoveList generateKingMoves(Chessboard &chessboard) {
     MoveList kingMoves;
-    Square fromSquare = (chessboard.turn == White) ? static_cast<Square>(GET_LSB(chessboard.whiteKing)) : static_cast<Square>(GET_LSB(chessboard.blackKing));
-    Bitboard toSquares = kingAttacks[fromSquare];
-    
-    Move move;
-    // Check for pseudo legal castling
-    if (chessboard.turn == White) {
-        if (chessboard.whiteKingCastle == true && (chessboard.allPieces & (0x6ULL)) == 0)
-            kingMoves.push_back(Move(Square::e1, Square::g1, Move::KingCastle));
-        if (chessboard.whiteQueenCastle == true && (chessboard.allPieces & (0x70ULL)) == 0)
-            kingMoves.push_back(Move(Square::e1, Square::c1, Move::QueenCastle));
-    } else {
-        if (chessboard.blackKingCastle == true && (chessboard.allPieces & (0x600000000000000ULL)) == 0)
-            kingMoves.push_back(Move(Square::e8, Square::g8, Move::KingCastle));
-        if (chessboard.blackQueenCastle == true && (chessboard.allPieces & (0x7000000000000000) == 0))
-            kingMoves.push_back(Move(Square::e8, Square::c8, Move::QueenCastle));
-    }
+    if ((chessboard.turn == White) ? chessboard.whiteKing : chessboard.blackKing) {
+        Square fromSquare = (chessboard.turn == White) ? static_cast<Square>(GET_LSB(chessboard.whiteKing)) : static_cast<Square>(GET_LSB(chessboard.blackKing));
+        Bitboard toSquares = kingAttacks[fromSquare];
+        
+        Move move;
+        // Check for pseudo legal castling
+        if (chessboard.turn == White) {
+            if (chessboard.whiteKingCastle == true && (chessboard.allPieces & (0x6ULL)) == 0)
+                kingMoves.push_back(Move(Square::e1, Square::g1, Move::KingCastle));
+            if (chessboard.whiteQueenCastle == true && (chessboard.allPieces & (0x70ULL)) == 0)
+                kingMoves.push_back(Move(Square::e1, Square::c1, Move::QueenCastle));
+        } else {
+            if (chessboard.blackKingCastle == true && (chessboard.allPieces & (0x600000000000000ULL)) == 0)
+                kingMoves.push_back(Move(Square::e8, Square::g8, Move::KingCastle));
+            if (chessboard.blackQueenCastle == true && (chessboard.allPieces & (0x7000000000000000) == 0))
+                kingMoves.push_back(Move(Square::e8, Square::c8, Move::QueenCastle));
+        }
 
-    // Add normal adjacent moves
-    while (toSquares) {
-        Square toSquare = static_cast<Square>(POP_LSB(toSquares));
-        pushPseudoLegalMove(chessboard, kingMoves, fromSquare, toSquare);
+        // Add normal adjacent moves
+        while (toSquares) {
+            Square toSquare = static_cast<Square>(POP_LSB(toSquares));
+            pushPseudoLegalMove(chessboard, kingMoves, fromSquare, toSquare);
+        }
     }
-
     return kingMoves;
 }
 
