@@ -17,8 +17,7 @@ int main() {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     printChessboard(chessboard);
-    printf("\n");
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 75; i++) {
         pseudoLegalMoves = chessboard.generatePseudoLegalMoves();
         Move bestMove;
 
@@ -34,7 +33,14 @@ int main() {
         chessboard.push(bestMove);
         bestMove.printMove();
         printChessboard(chessboard);
-        printf("\n");
+    }
+
+    printChessboard(chessboard);
+    for (int i = 0; i < 75; i++) {
+        std::cout << "Undo: ";
+        chessboard.pastMoves.back().printMove();
+        chessboard.pop();
+        printChessboard(chessboard);
     }
 
     return 0;
